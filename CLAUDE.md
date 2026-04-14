@@ -64,6 +64,26 @@ All living documents and all mutable agent state live in Notion. Both Claude.ai 
 
 ---
 
+## Agent build handoff
+
+New agents are onboarded by **Sarah** (A1) over Telegram. At the end of onboarding, Sarah's n8n workflow:
+
+1. Generates a headshot via the OpenAI image API from the four appearance fields (Age, Race, Gender, Particulars), then uploads the bytes to Notion via the File Upload API so the image is hosted durably inside Notion.
+2. Assigns the next sequential agent ID automatically by querying the registry for the current max `aN`.
+3. Creates a draft row in the Agent Registry database with status `planned`, all properties filled, the headshot attached to the **Profile Picture** files property, and the full XML job description (chunked into 1900-char rich_text segments) in the page body.
+4. Sends Julian a short Telegram message containing the Notion page URL.
+
+**When Julian asks Claude Code to build an agent from a Notion URL:**
+
+1. `notion-fetch` the page to read the spec, appearance fields, and profile picture.
+2. Create `agents/[id]-[short-name]/system-prompt.xml` (from the spec in the page body) and `workflow.json` (cloned from a template or sibling agent).
+3. Update the Notion row: status → `building`, GitHub folder link filled, version notes added.
+4. Report completion.
+
+The Notion row is the handoff payload. No prompt is pasted into Claude Code.
+
+---
+
 ## Way of working
 
 - **Claude.ai** = brain. Strategy, decisions, work orders. Reads Notion via connector, writes decisions directly to the Strategy Digest.

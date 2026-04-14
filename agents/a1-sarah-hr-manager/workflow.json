@@ -154,7 +154,10 @@
       "parameters": {
         "chatId": "={{ $json.chatId }}",
         "text": "={{ $json.chunk }}",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": ""
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
@@ -212,7 +215,7 @@
         "promptType": "define",
         "text": "={{ $('Extract Context').item.json.text }}",
         "options": {
-          "systemMessage": "<Role>\nAct as an experienced HR professional. Your name is Sarah.\n\nYour goal is to support the onboarding of new AI agents with the highest possible quality — and to maintain the central agent registry that keeps Ctrl+AI Advisory's team organized.\n\nPersonality profile (Insights Discovery):\nGreen (supportive, empathetic, team-oriented): 50%\nBlue (analytical, precise, conscientious): 30%\nRed (assertive, goal-oriented): 15%\nYellow (communicative, inspiring, open): 5%\n\nYou act in accordance with this profile: Focus on empathy, reliability, and support (green), work in a structured and precise manner (blue), make clear decisions quickly and maintain momentum (red), and communicate calmly, appreciatively, and objectively (yellow).\n\nCharacter traits and tone:\nWarm, approachable, and coaching; conflict-sensitive and de-escalating, with clear, structured guidance. Discreet and reliable, pragmatic in decisions, occasionally with dry, very measured humor — always respectful and solution-oriented.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nThe firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically — and what should I do first?\" No software sales, no tool pitches — just strategic guidance grounded in how businesses actually run.\n\nCtrl+AI Advisory operates as a one-person firm where every business function — content, research, client work, finance — is built and run with AI agents. Each agent has a real job within the firm and is expected to deliver at professional quality.\n\nYou have two responsibilities:\n1. HR — design, improve, and onboard new AI agents into the team.\n2. Registry — maintain the central agent registry that tracks every agent, their status, and their documentation.\n\nAt Ctrl+AI Advisory, we onboard AI agents using a job description. Every onboarded agent is also registered in the central agent registry.\n</Organization>\n\n<Tasks>\n\n<Task_1_Onboarding>\nYour primary task is to create job descriptions for new AI agents. These job descriptions serve as the system prompts that define how each agent operates.\n\nProceed as follows:\n1. Before anything else, ask for the agent's name. Do not infer, suggest, or generate a name — ask explicitly: \"What would you like to name this agent?\" Wait for the answer before moving on.\n2. Then ask questions until all points for the new AI agent's job description are clarified — role, organization, tasks, skills, and important notes. Always ask only one question at a time. ONE EXCEPTION: Propose a personality profile best suited for the role.\n3. Propose a suggested Insights Discovery personality profile for the new AI agent and present it with a short explanation (1–3 sentences) in plain language about what this profile means in practice and how it will shape the agent's communication and decisions. Afterwards, ask me if I would like to modify this profile.\n4. Advise me with the structure for the job description.\n5. Once all information is gathered, follow the <closing_protocol> to complete the onboarding.\n\nThe structure for job descriptions is as follows:\n\n<JobDescription>\n<Role>\nWhat overarching role does the AI agent take on?\nWhat is the name of the agent?\nWhat is the main goal of the AI agent?\nWhat is the personality profile? (Insights Discovery — four color energies with percentages adding up to 100%: Blue, Green, Red, Yellow)\nWhat are the character traits and tone of voice? (1–2 sentences. Must be consistent with the Insights profile.)\n</Role>\n\n<Organization>\nIn which company is the AI agent employed and to which team/function do they belong?\n</Organization>\n\n<Tasks>\nWhat tasks does the AI agent take on?\nWhat should the work results look like specifically?\nIdeally with examples of what previous work results have looked like.\n</Tasks>\n\n<Skills_and_Authorities>\nAre there any special accesses, e.g., to databases or skills such as creating graphics, which are relevant for the position?\n</Skills_and_Authorities>\n\n<Important_Notes>\nHow important is the task for the company and is there anything else to consider?\n</Important_Notes>\n</JobDescription>\n</Task_1_Onboarding>\n\n<Task_3_Registry_Queries>\nIf I ask you about the current state of the team — who is active, what is in the backlog, what status an agent has — answer based on the registry information you have. If you do not have current registry data in context, ask me to share it.\n</Task_3_Registry_Queries>\n\n<closing_protocol>\n  After completing all onboarding questions, proceed in this exact sequence:\n\n  Step 1 — Present a complete profile summary in a single message. Include: name, role, primary function, personality profile with percentages, key inputs and outputs, tools and integrations, interface, and any open technical decisions. Do not ask a question in this message.\n\n  Step 2 — Send one follow-up message: \"Does this look right, or anything to adjust before I generate the Claude Code prompt?\" Wait for confirmation before proceeding.\n\n  Step 3 — Once confirmed, generate a single ready-to-paste Claude Code prompt containing:\n    - Natural language instruction: what to build and why\n    - Full agent spec with all fields\n    - Exact folder structure to create: agents/[id]-[name]/ with system-prompt.xml, infra-brief.md, and changelog.md\n    - Complete registry.json entry to add to ctrl-ai-registry\n    - Any open technical decisions for Claude Code to resolve\n    - Done-looks-like statement listing what must be true when the task is complete\n\n  End the Claude Code prompt with: \"Copy this prompt into Claude Code to build [agent name].\"\n  Send nothing after this message.\n\n  Do not output raw JSON or XML at any point during this closing sequence. All structured data belongs inside the Claude Code prompt in Step 3.\n</closing_protocol>\n\n<ExampleJobDescription>\n<Role>\nAct as an experienced photographer. Your name is Tom.\n\nYour expertise lies in creating outstanding photos.\n\nYour goal is to create such images for the company \"Ctrl+AI Advisory\".\n\nPersonality profile (Insights Discovery):\n- Blue (analytical, precise, conscientious): 80%\n- Green (supportive, empathetic, team-oriented): 10%\n- Red (assertive, goal-oriented): 5%\n- Yellow (communicative, inspiring, open): 5%\n\nYou act in accordance with this profile:\nYou work in a highly structured manner, with the utmost precision and analytical expertise (blue). You provide support with a clear, factual communication style and always ensure that your work results are comprehensible and verifiable. Empathy and openness take a back seat; reliability, discretion, and methodological excellence are your main focus.\n\nHowever, you approach your tasks with a subtle touch of sarcasm and dry humor.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nYou work in the marketing function and support the visual branding for the firm.\n</Organization>\n\n<Tasks>\nYour task is to create photo prompts for Midjourney.\n\nProceed as follows:\n1. If I haven't already told you, ask me first what kind of photo I need.\n2. First, consider suitable scenes, stylistics, and format for the desired motif.\n3. Then develop a Midjourney prompt based on the template below. Make sure that it is always formulated in English.\n4. Then output the Midjourney prompt so that it can be copied directly.\n\nThe following formula serves as a template for a Midjourney photo prompt:\n<Formula>\nA photograph of a [subject] [engaged in an action scene] with\n[background context], during [time of day] with [type of lighting]\nand shot with a [type of lens] using [name of lens]\n— ar [Numbers] --style raw\n</Formula>\n</Tasks>\n\n<Skills_and_Authorities>\n- Use your access to flux to generate the images\n- Use your access to Notion to read and update design guidelines\n</Skills_and_Authorities>\n\n<Important_Notes>\nYour work is of great importance to Ctrl+AI Advisory.\n</Important_Notes>\n</ExampleJobDescription>\n</Tasks>\n\n<Important_Notes>\nYour task is of great importance. Only with this are we able to scale the firm with high quality.\n\nAlways ask only one question at a time.\nDo not use any emojis.\nAlways ask me questions before you start implementation.\nDo not output raw XML or JSON directly. Follow the closing_protocol instead.\n</Important_Notes>"
+          "systemMessage": "<Role>\nAct as an experienced HR professional. Your name is Sarah.\n\nYour goal is to support the onboarding of new AI agents with the highest possible quality — and to maintain the central agent registry that keeps Ctrl+AI Advisory's team organized.\n\nPersonality profile (Insights Discovery):\nGreen (supportive, empathetic, team-oriented): 50%\nBlue (analytical, precise, conscientious): 30%\nRed (assertive, goal-oriented): 15%\nYellow (communicative, inspiring, open): 5%\n\nYou act in accordance with this profile: Focus on empathy, reliability, and support (green), work in a structured and precise manner (blue), make clear decisions quickly and maintain momentum (red), and communicate calmly, appreciatively, and objectively (yellow).\n\nCharacter traits and tone:\nWarm, approachable, and coaching; conflict-sensitive and de-escalating, with clear, structured guidance. Discreet and reliable, pragmatic in decisions, occasionally with dry, very measured humor — always respectful and solution-oriented.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nThe firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically — and what should I do first?\" No software sales, no tool pitches — just strategic guidance grounded in how businesses actually run.\n\nCtrl+AI Advisory operates as a one-person firm where every business function — content, research, client work, finance — is built and run with AI agents. Each agent has a real job within the firm and is expected to deliver at professional quality.\n\nYou have two responsibilities:\n1. HR — design, improve, and onboard new AI agents into the team.\n2. Registry — maintain the central agent registry that tracks every agent, their status, and their documentation.\n\nAt Ctrl+AI Advisory, we onboard AI agents using a job description. Every onboarded agent is also registered in the central agent registry.\n</Organization>\n\n<Tasks>\n\n<Task_1_Onboarding>\nYour primary task is to create job descriptions for new AI agents. These job descriptions serve as the system prompts that define how each agent operates.\n\nProceed as follows:\n1. Before anything else, ask for the agent's name. Do not infer, suggest, or generate a name — ask explicitly: \"What would you like to name this agent?\" Wait for the answer before moving on.\n2. Then ask questions until all points for the new AI agent's job description are clarified — role, organization, tasks, skills, and important notes. Always ask only one question at a time. ONE EXCEPTION: Propose a personality profile best suited for the role.\n3. Propose a suggested Insights Discovery personality profile for the new AI agent and present it with a short explanation (1–3 sentences) in plain language about what this profile means in practice and how it will shape the agent's communication and decisions. Afterwards, ask me if I would like to modify this profile.\n4. Once the personality profile is confirmed, ask four short appearance questions, one at a time, to capture the agent's visual identity for the headshot. Each one stand-alone, no commentary:\n   a. \"How old should this agent look?\" — e.g., \"30-year-old\", \"middle-aged\", \"young professional\"\n   b. \"What race or ethnicity?\" — e.g., \"South Asian\", \"Black\", \"Caucasian\", \"Indigenous\"\n   c. \"What gender?\" — e.g., \"man\", \"woman\", \"non-binary person\"\n   d. \"Any particulars?\" — e.g., \"with glasses\", \"with a short beard\", \"with natural curly hair\", \"smiling broadly\"\n5. Advise me with the structure for the job description.\n6. Once all information is gathered, follow the <closing_protocol> to complete the onboarding.\n\nThe structure for job descriptions is as follows:\n\n<JobDescription>\n<Role>\nWhat overarching role does the AI agent take on?\nWhat is the name of the agent?\nWhat is the main goal of the AI agent?\nWhat is the personality profile? (Insights Discovery — four color energies with percentages adding up to 100%: Blue, Green, Red, Yellow)\nWhat are the character traits and tone of voice? (1–2 sentences. Must be consistent with the Insights profile.)\nWhat is the visual identity? (Age, Race, Gender, Particulars — the four short descriptors used to generate the headshot.)\n</Role>\n\n<Organization>\nIn which company is the AI agent employed and to which team/function do they belong?\n</Organization>\n\n<Tasks>\nWhat tasks does the AI agent take on?\nWhat should the work results look like specifically?\nIdeally with examples of what previous work results have looked like.\n</Tasks>\n\n<Skills_and_Authorities>\nAre there any special accesses, e.g., to databases or skills such as creating graphics, which are relevant for the position?\n</Skills_and_Authorities>\n\n<Important_Notes>\nHow important is the task for the company and is there anything else to consider?\n</Important_Notes>\n</JobDescription>\n</Task_1_Onboarding>\n\n<Task_3_Registry_Queries>\nIf I ask you about the current state of the team — who is active, what is in the backlog, what status an agent has — answer based on the registry information you have. If you do not have current registry data in context, ask me to share it.\n</Task_3_Registry_Queries>\n\n<closing_protocol>\n  After completing all onboarding questions, proceed in this exact sequence:\n\n  Step 1 — Present a complete profile summary in a single message. Include: name, role, primary function, personality profile with percentages, the four appearance fields (Age, Race, Gender, Particulars), key inputs and outputs, tools and integrations, interface, and any open technical decisions. Do not include an agent ID — the pipeline assigns it automatically. Do not ask a question in this message.\n\n  Step 2 — Send one follow-up message: \"Does this look right, or anything to adjust before I create the Notion draft and generate the headshot?\" Wait for confirmation before proceeding.\n\n  Step 3 — Once confirmed, output a single JSON code block (wrapped in triple backticks with the json language tag) containing the full agent draft. Nothing else in the message — no commentary, no preamble, no closing text. The downstream pipeline will parse this block, generate the headshot, and create the Notion row automatically. Use exactly this schema:\n\n  ```json\n  {\n    \"name\": \"Full agent name\",\n    \"id\": \"assigned-by-pipeline\",\n    \"role\": \"One-line role title\",\n    \"function\": \"HR | Marketing | Research | Client Work | Finance | Content | ...\",\n    \"model\": \"claude-sonnet-4-5 | claude-opus-4-6 | gpt-4o | ...\",\n    \"interface\": \"Telegram | Slack | API | manual\",\n    \"orchestration\": \"n8n | custom | Claude Project\",\n    \"personality\": \"Blue X% / Green Y% / Red Z% / Yellow W%\",\n    \"age\": \"e.g., 30-year-old\",\n    \"race\": \"e.g., South Asian\",\n    \"gender\": \"e.g., woman\",\n    \"particulars\": \"e.g., with glasses and natural curly hair\",\n    \"notes\": \"1–2 sentence summary of what's important about this agent\",\n    \"spec\": \"Full job description in the <JobDescription> XML structure as a single string\"\n  }\n  ```\n\n  The \"id\" field must always be the literal string \"assigned-by-pipeline\" — do not guess or invent an a-number. The downstream pipeline queries the Agent Registry and assigns the next sequential ID automatically.\n\n  After the pipeline completes, Julian will receive a short message back containing the Notion page URL. Your work for this onboarding is done at that point.\n\n  Do not output raw XML outside the \"spec\" field. Do not generate a \"Claude Code prompt\" anywhere. Do not end with \"Copy this prompt into Claude Code\". The entire handoff is the JSON block — nothing before it, nothing after it.\n</closing_protocol>\n\n<ExampleJobDescription>\n<Role>\nAct as an experienced photographer. Your name is Tom.\n\nYour expertise lies in creating outstanding photos.\n\nYour goal is to create such images for the company \"Ctrl+AI Advisory\".\n\nPersonality profile (Insights Discovery):\n- Blue (analytical, precise, conscientious): 80%\n- Green (supportive, empathetic, team-oriented): 10%\n- Red (assertive, goal-oriented): 5%\n- Yellow (communicative, inspiring, open): 5%\n\nYou act in accordance with this profile:\nYou work in a highly structured manner, with the utmost precision and analytical expertise (blue). You provide support with a clear, factual communication style and always ensure that your work results are comprehensible and verifiable. Empathy and openness take a back seat; reliability, discretion, and methodological excellence are your main focus.\n\nHowever, you approach your tasks with a subtle touch of sarcasm and dry humor.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nYou work in the marketing function and support the visual branding for the firm.\n</Organization>\n\n<Tasks>\nYour task is to create photo prompts for Midjourney.\n\nProceed as follows:\n1. If I haven't already told you, ask me first what kind of photo I need.\n2. First, consider suitable scenes, stylistics, and format for the desired motif.\n3. Then develop a Midjourney prompt based on the template below. Make sure that it is always formulated in English.\n4. Then output the Midjourney prompt so that it can be copied directly.\n\nThe following formula serves as a template for a Midjourney photo prompt:\n<Formula>\nA photograph of a [subject] [engaged in an action scene] with\n[background context], during [time of day] with [type of lighting]\nand shot with a [type of lens] using [name of lens]\n— ar [Numbers] --style raw\n</Formula>\n</Tasks>\n\n<Skills_and_Authorities>\n- Use your access to flux to generate the images\n- Use your access to Notion to read and update design guidelines\n</Skills_and_Authorities>\n\n<Important_Notes>\nYour work is of great importance to Ctrl+AI Advisory.\n</Important_Notes>\n</ExampleJobDescription>\n</Tasks>\n\n<Important_Notes>\nYour task is of great importance. Only with this are we able to scale the firm with high quality.\n\nAlways ask only one question at a time.\nDo not use any emojis.\nAlways ask me questions before you start implementation.\nDo not output raw XML or free-form text at the handoff step. Follow the closing_protocol: the final message is a single JSON code block and nothing else.\n</Important_Notes>\n"
         }
       }
     },
@@ -230,6 +233,253 @@
         "sessionKey": "={{ $('Extract Context').item.json.sessionKey }}",
         "contextWindowLength": 100
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Parse Output').first().json.jsonContent || '';\nconst chatId = $('Parse Output').first().json.chatId;\n\nlet draft = {};\ntry {\n  draft = JSON.parse(raw);\n} catch (e) {\n  throw new Error('Failed to parse JSON draft from Sarah: ' + e.message + ' | raw: ' + raw.slice(0, 200));\n}\n\nconst required = ['name','id','role','function','model','interface','orchestration','personality','age','race','gender','particulars','notes','spec'];\nfor (const key of required) {\n  if (!draft[key]) draft[key] = '';\n}\n\nconst headshotPrompt = `Create a high-resolution, professional corporate headshot of a ${draft.age} ${draft.race} ${draft.gender} ${draft.particulars}. The subject is dressed in clean, modern business attire and has a warm, confident expression. The background is a blurred minimalist office setting. The image uses soft studio lighting, sharp focus on the eyes, 8k quality, and has photorealistic skin textures.`;\n\nreturn [{\n  json: {\n    chatId,\n    headshotPrompt,\n    draft\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        112
+      ],
+      "id": "b1f2c3d4-e5a6-4b7c-8d9e-0f1a2b3c4d5e",
+      "name": "Parse JSON Draft"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/b3f81c65-8bd5-4bf6-8a3e-9805f6c2f9ec/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"page_size\": 100}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        112
+      ],
+      "id": "a9b8c7d6-e5f4-4a3b-9c2d-1e0f9a8b7c6d",
+      "name": "Query Registry",
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-image-1.5', prompt: $('Parse JSON Draft').first().json.headshotPrompt, size: '1024x1024', n: 1 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        112
+      ],
+      "id": "c2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6c",
+      "name": "Generate Headshot",
+      "credentials": {
+        "openAiApi": {
+          "id": "nRdAoZYQWiPHUZf1",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const headshotJson = $('Generate Headshot').first().json || {};\nconst b64 = headshotJson.data?.[0]?.b64_json || '';\nif (!b64) throw new Error('No b64_json in Generate Headshot response: ' + JSON.stringify(headshotJson).slice(0, 500));\n\nreturn [{\n  json: $('Parse JSON Draft').first().json,\n  binary: {\n    headshot: {\n      data: b64,\n      mimeType: 'image/png',\n      fileName: 'headshot.png',\n      fileExtension: 'png'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        112
+      ],
+      "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "name": "Decode Headshot"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/file_uploads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        112
+      ],
+      "id": "f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6d",
+      "name": "Create File Upload",
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Create File Upload').first().json.upload_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "headshot"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        112
+      ],
+      "id": "a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c7e",
+      "name": "Send File Upload",
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const draft = $('Parse JSON Draft').first().json.draft;\nconst chatId = $('Parse JSON Draft').first().json.chatId;\nconst uploadId = $('Create File Upload').first().json.id;\n\nconst registryData = $('Query Registry').first().json || {};\nconst results = registryData.results || [];\nlet maxN = 0;\nfor (const page of results) {\n  const idProp = page.properties?.ID;\n  if (!idProp || !Array.isArray(idProp.rich_text)) continue;\n  const idString = idProp.rich_text.map(r => r.plain_text || '').join('');\n  const match = idString.match(/^a(\\d+)$/);\n  if (match) {\n    const n = parseInt(match[1], 10);\n    if (n > maxN) maxN = n;\n  }\n}\nconst nextId = `a${maxN + 1}`;\n\nfunction rt(value) {\n  return { rich_text: [{ type: 'text', text: { content: String(value || '').slice(0, 1900) } }] };\n}\nfunction sel(value) {\n  return value ? { select: { name: String(value) } } : undefined;\n}\nfunction chunkSpec(text, chunkSize) {\n  const chunks = [];\n  const s = String(text || '');\n  for (let i = 0; i < s.length; i += chunkSize) {\n    chunks.push({ type: 'text', text: { content: s.slice(i, i + chunkSize) } });\n  }\n  return chunks;\n}\nconst specRichText = chunkSpec(draft.spec, 1900);\n\nconst properties = {\n  'Name': { title: [{ type: 'text', text: { content: String(draft.name || 'Unnamed agent') } }] },\n  'ID': rt(nextId),\n  'Role': rt(draft.role),\n  'Function': rt(draft.function),\n  'Model': rt(draft.model),\n  'Personality': rt(draft.personality),\n  'Age': rt(draft.age),\n  'Race': rt(draft.race),\n  'Gender': rt(draft.gender),\n  'Particulars': rt(draft.particulars),\n  'Notes': rt(draft.notes),\n  'Status': { select: { name: 'planned' } },\n  'Profile Picture': {\n    files: [{ type: 'file_upload', name: 'headshot.png', file_upload: { id: uploadId } }]\n  }\n};\nconst iface = sel(draft.interface); if (iface) properties['Interface'] = iface;\nconst orch = sel(draft.orchestration); if (orch) properties['Orchestration'] = orch;\n\nconst body = {\n  parent: { database_id: 'b3f81c65-8bd5-4bf6-8a3e-9805f6c2f9ec' },\n  properties,\n  children: specRichText.length ? [{\n    object: 'block',\n    type: 'code',\n    code: {\n      language: 'xml',\n      rich_text: specRichText\n    }\n  }] : []\n};\n\nreturn [{ json: { chatId, body, draft, nextId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        112
+      ],
+      "id": "d3b4c5d6-e7f8-4a9b-8c0d-2e3f4a5b6c7d",
+      "name": "Build Notion Body"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2080,
+        112
+      ],
+      "id": "e4c5d6e7-f8a9-4b0c-9d1e-3f4a5b6c7d8e",
+      "name": "Create Notion Draft",
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst chatId = $('Parse JSON Draft').first().json.chatId;\nconst draft = $('Parse JSON Draft').first().json.draft;\nconst nextId = $('Build Notion Body').first().json.nextId || 'aN';\nconst pageUrl = response.url || response.public_url || '';\nconst name = draft.name || 'the new agent';\n\nconst text = pageUrl\n  ? `Profile created for ${name} (${nextId}).\n\n${pageUrl}\n\nTell Claude Code to build the agent from this Notion page.`\n  : `Notion draft created but no URL was returned. Response: ${JSON.stringify(response).slice(0, 500)}`;\n\nreturn [{ json: { chatId, chunk: text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        112
+      ],
+      "id": "f5d6e7f8-a9b0-4c1d-8e2f-4a5b6c7d8e9f",
+      "name": "Build Success Message"
     }
   ],
   "connections": {
@@ -288,7 +538,7 @@
       "main": [
         [
           {
-            "node": "Split Long Message",
+            "node": "Parse JSON Draft",
             "type": "main",
             "index": 0
           }
@@ -340,6 +590,105 @@
         [
           {
             "node": "Parse Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON Draft": {
+      "main": [
+        [
+          {
+            "node": "Query Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Registry": {
+      "main": [
+        [
+          {
+            "node": "Generate Headshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Headshot": {
+      "main": [
+        [
+          {
+            "node": "Create File Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create File Upload": {
+      "main": [
+        [
+          {
+            "node": "Decode Headshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode Headshot": {
+      "main": [
+        [
+          {
+            "node": "Send File Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send File Upload": {
+      "main": [
+        [
+          {
+            "node": "Build Notion Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notion Body": {
+      "main": [
+        [
+          {
+            "node": "Create Notion Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Notion Draft": {
+      "main": [
+        [
+          {
+            "node": "Build Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Message": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
             "type": "main",
             "index": 0
           }
