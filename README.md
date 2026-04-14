@@ -1,44 +1,53 @@
 # Ctrl+AI Registry
 
-Central agent registry for Ctrl+AI Advisory — the fictional consulting firm at the heart of [Project Zero](https://github.com/[TBD]/project-zero).
+Deployment repo for the AI agents of **Ctrl+AI Advisory** — a one-person, vendor-neutral AI consulting firm for SMEs. Part of [Project Zero](https://www.notion.so/Project-Zero-Master-Doc-340824baea2b819eaafcce451dfa4fb3).
 
 ## What this is
 
-Every AI agent that operates within Ctrl+AI Advisory is registered here. This repo is the single source of truth for who's on the team, what they do, and how they're built.
+This repo holds the **deployable configuration** for every agent operating within the firm — one folder per agent, containing the system prompt and the n8n workflow export.
+
+It is deliberately slim. The agent **registry itself** — roster, status, model, role, relationships, version notes — lives in a Notion database under the Project Zero Master Doc. That is the single source of truth for agent state. This repo only holds what needs to be deployed to n8n.
 
 ## Structure
 
 ```
 ctrl-ai-registry/
-├── registry.json                      # Central manifest — all agents, status, references
+├── CLAUDE.md                           # Instructions for Claude Code
+├── README.md
 ├── agents/
-│   └── a1-sarah-hr-manager/
-│       ├── system-prompt.xml          # The actual system prompt
-│       ├── infra-brief.md             # Infrastructure setup spec
-│       └── changelog.md               # Version history for this agent
-├── backlog/
-│   └── backlog.md                     # Future agent concepts
+│   ├── a1-sarah-hr-manager/
+│   │   ├── system-prompt.xml           # The system prompt
+│   │   └── workflow.json               # n8n workflow export
+│   └── a2-alex-knowledge-assistant/
+│       ├── system-prompt.xml
+│       └── workflow.json
 └── templates/
-    ├── system-prompt-template.xml     # Standard prompt structure
-    └── infra-brief-template.md        # Standard brief structure
+    └── system-prompt-template.xml      # Standard prompt structure
 ```
 
 ## How it works
 
-1. **New agent needed** → Julian briefs Sarah (A1 — HR Manager) via Telegram
-2. **Sarah runs onboarding** → guided conversation → produces job description (XML) + registry entry (JSON)
-3. **Julian adds to repo** → system prompt goes in `agents/[id]-[name]/`, registry entry goes in `registry.json`
-4. **Agent gets built** → infra brief goes to the Infrastructure project for implementation
+1. **New agent needed** → Julian briefs Sarah (A1 — HR Manager) via Telegram.
+2. **Sarah runs onboarding** → guided conversation → produces a job description (XML).
+3. **Agent gets built** → n8n workflow created, system prompt committed to `agents/[id]-[name]/system-prompt.xml`, workflow exported to `workflow.json`.
+4. **Registry updated** → a new row is added to the Notion Agent Registry with status, phase, model, personality, and a link to this folder.
 
 ## Conventions
 
-- **Agent IDs** are sequential: `a1`, `a2`, `a3`, ...
+- **Agent IDs** are sequential: `a1`, `a2`, `a3`, …
 - **Folder names** follow the pattern: `[id]-[short-name]` (e.g., `a1-sarah-hr-manager`)
-- **Status values:** `active`, `building`, `planned`, `retired`
-- **All prompts** use the XML job description format defined in `templates/`
-- **All changes** get a changelog entry
+- **All prompts** use the XML job description format defined in `templates/system-prompt-template.xml`
+- **Status values** (tracked in the Notion registry, not here): `active`, `building`, `planned`, `retired`
+- Mutable state — versions, changelogs, infra notes — lives on the corresponding row in the Notion registry, not in this repo.
 
-## Related projects
+## Where things live
 
-- **Ctrl+AI Strategy** — brand, positioning, business model, go-to-market
-- **Ctrl+AI Infrastructure** — VPS, n8n, technical implementation
+| What | Where |
+|---|---|
+| Deployable agent configs (prompts + workflows) | This repo |
+| Agent registry (roster, status, state, notes) | Notion database (under Master Doc) |
+| Strategy, positioning, roadmap, way-of-working | Notion Master Doc |
+| Current decisions, backlog, open questions | Notion Strategy Digest |
+| Orchestration runtime | n8n on VPS |
+
+Both Claude.ai (brain) and Claude Code (hands) read from Notion and from this repo. Julian bridges strategy from Claude.ai to execution in Claude Code.

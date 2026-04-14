@@ -2,9 +2,11 @@
 
 ## What this repo is
 
-`ctrl-ai-registry` is the central agent registry for **Ctrl+AI Advisory** — a one-person, vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi). Every AI agent that operates within the firm is registered here.
+`ctrl-ai-registry` is the deployment repo for **Ctrl+AI Advisory** — a one-person, vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi). It holds the deployable configuration for every AI agent operating within the firm: one folder per agent, containing `system-prompt.xml` and `workflow.json`.
 
-This is the **execution layer**. Strategy decisions come from Claude.ai sessions and land in Notion. Claude Code reads them directly via Notion MCP.
+The **agent registry itself** — roster, status, model, relationships, state — lives in a Notion database, not in this repo. This repo is purely the execution layer. Strategy decisions come from Claude.ai sessions and land in Notion. Claude Code reads them directly via Notion MCP.
+
+Both Claude.ai and Claude Code have read access to this repo (Claude.ai via project knowledge integration, Claude Code via local filesystem).
 
 ---
 
@@ -30,27 +32,32 @@ This is the **execution layer**. Strategy decisions come from Claude.ai sessions
 
 - **Agent IDs** are sequential: `a1`, `a2`, `a3`, …
 - **Folder names:** `agents/[id]-[short-name]/` (e.g., `agents/a1-sarah-hr-manager/`)
-- **Every agent has three files:** `system-prompt.xml`, `infra-brief.md`, `changelog.md`
+- **Every agent has two files in this repo:** `system-prompt.xml` (the prompt) and `workflow.json` (the n8n workflow export).
+- **Everything else about an agent** — status, model, role, function, personality, relationships, version notes — lives in the Notion Agent Registry database, not in this repo.
 - **Orchestration:** n8n (VPS-hosted) unless otherwise specified
 - **Job descriptions** use the XML format defined in `templates/system-prompt-template.xml`
-- **Status values:** `active`, `building`, `planned`, `retired`
+- **Status values (used in the Notion registry):** `active`, `building`, `planned`, `retired`
 
 ---
 
 ## Document layer — Notion is the single source of truth
 
-All living documents live in Notion. Both Claude.ai (via the Notion connector) and Claude Code (via Notion MCP) read from and write to the same pages. There is no Google Drive, no local markdown mirror, no build step.
+All living documents and all mutable agent state live in Notion. Both Claude.ai (via the Notion connector) and Claude Code (via Notion MCP) read from and write to the same pages. There is no Google Drive, no local markdown mirror, no build step.
 
-**Two Notion pages hold everything:**
+**Three Notion entities hold everything:**
 
 - **Master Doc** — `340824ba-ea2b-819e-aafc-ce451dfa4fb3`
   Project Zero spec, firm positioning, agent roadmap, infrastructure, way-of-working.
 - **Strategy Digest** — `22d6f96c-1f2c-447e-897a-c064c3484d50`
   Current phase, active decisions, backlog, open questions, recently completed.
+- **Agent Registry database** (data source `ba781fc9-fdd0-418e-a34c-55f235b4f6e2`, embedded under the Master Doc)
+  One row per agent. Holds name, ID, role, function, status, phase, model, interface, orchestration, personality, GitHub folder link, dates, and version notes.
 
-**How to access them:** Use the Notion MCP tools (`notion-fetch`, `notion-update-page`) with the page IDs above. Read the Strategy Digest at the start of any session where current state or backlog matters.
+**How to access them:** Use the Notion MCP tools (`notion-fetch`, `notion-update-page`, `notion-create-pages`, `notion-update-data-source`) with the IDs above. Read the Strategy Digest at the start of any session where current state or backlog matters. Query the Agent Registry whenever you need to know what exists, what's live, or what changed.
 
 **What you do NOT need:**
+- No `registry.json`. The registry is a Notion database.
+- No per-agent `infra-brief.md` or `changelog.md` files. Infra details and version history live on the corresponding Notion registry row.
 - No `build-context.sh`. Claude Code reads Notion directly — there is nothing to generate.
 - No handoff block format. Claude.ai writes strategy decisions straight to the Strategy Digest via its own Notion connector.
 - No local mirror of the Master Doc or Strategy Digest. If you need the content, fetch it.
@@ -69,10 +76,10 @@ All living documents live in Notion. Both Claude.ai (via the Notion connector) a
 
 ## Infrastructure
 
-- **Repo:** `github.com/IAMJURI8/ctrl-ai-registry`
-- **Registry manifest:** `registry.json` — single source of truth for all agents
+- **Repo:** `github.com/IAMJURI8/ctrl-ai-registry` — holds only deployable agent configs (`system-prompt.xml` + `workflow.json` per agent) plus templates and this doc. Claude.ai has read access via its GitHub project knowledge integration; Claude Code has local read/write access.
+- **Agent registry:** Notion database under the Master Doc (data source `ba781fc9-fdd0-418e-a34c-55f235b4f6e2`) — single source of truth for agent roster and state.
 - **Orchestration:** n8n running on VPS
-- **Notion MCP** is connected — Claude Code reads and writes both Notion pages directly
+- **Notion MCP** is connected — Claude Code reads and writes the Master Doc, Strategy Digest, and Agent Registry directly
 
 ---
 
