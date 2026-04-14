@@ -13,7 +13,16 @@
       "Read(//c/Users/julia/AppData/Local/**)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
       "Bash(winget install:*)",
-      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'fix\\(a1-sarah\\): unblock closing step — timeout, chunking, stable memory' --body ':*)"
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' pr create --title 'fix\\(a1-sarah\\): unblock closing step — timeout, chunking, stable memory' --body ':*)",
+      "mcp__n8n-mcp__n8n_health_check",
+      "mcp__n8n-mcp__n8n_list_workflows",
+      "mcp__n8n-mcp__n8n_update_full_workflow",
+      "mcp__n8n-mcp__n8n_validate_workflow",
+      "Bash(node -e ':*)",
+      "Bash(node -e \"const wf = JSON.parse\\(require\\('fs'\\).readFileSync\\('agents/a1-sarah-hr-manager/workflow.json','utf8'\\)\\); const sarah = wf.nodes.find\\(n => n.name === 'Sarah Agent'\\); console.log\\('valid JSON, nodes:', wf.nodes.length\\); console.log\\('systemMessage first 200:', sarah.parameters.options.systemMessage.slice\\(0,200\\)\\);\")",
+      "mcp__n8n-mcp__n8n_update_partial_workflow",
+      "mcp__n8n-mcp__n8n_get_workflow",
+      "Bash(node -e \"const fs=require\\('fs'\\); const p='agents/a1-sarah-hr-manager/system-prompt.xml'; let c=fs.readFileSync\\(p,'utf8'\\); if\\(!c.endsWith\\('\\\\n'\\)\\) fs.writeFileSync\\(p,c+'\\\\n'\\); console.log\\('ok'\\);\")"
     ]
   }
 }
