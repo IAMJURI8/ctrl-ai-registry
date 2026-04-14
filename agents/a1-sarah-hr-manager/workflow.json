@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nif (isNew || !staticData.sessions[chatId]) {\n  staticData.sessions[chatId] = (staticData.sessions[chatId] || 0) + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionKey\n  }\n}];"
+        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nconst prev = staticData.sessions[chatId];\nconst prevNum = typeof prev === 'number' && Number.isFinite(prev) ? prev : 0;\n\nif (isNew || prevNum === 0) {\n  staticData.sessions[chatId] = prevNum + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionKey\n  }\n}];"
       },
       "id": "18528e2c-7424-4675-a12f-62311ce14b36",
       "name": "Extract Context",
