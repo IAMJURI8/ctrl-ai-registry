@@ -1,0 +1,13 @@
+services:
+  claude-code:
+    build: .
+    container_name: claude-remote
+    restart: unless-stopped
+    environment:
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+    volumes:
+      - /path/to/ctrl-ai-registry:/workspace
+      - claude-config:/home/node/.claude
+
+volumes:
+  claude-config:
