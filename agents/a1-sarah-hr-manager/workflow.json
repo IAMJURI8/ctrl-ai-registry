@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\n// Session management via static workflow data.\n// sessionId rotates on /new, which gives Conversation Memory a fresh bucket per onboarding.\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nif (isNew || !staticData.sessions[chatId]) {\n  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);\n  staticData.sessions[chatId] = id;\n}\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionId: staticData.sessions[chatId]\n  }\n}];"
+        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nif (isNew || !staticData.sessions[chatId]) {\n  staticData.sessions[chatId] = (staticData.sessions[chatId] || 0) + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionKey\n  }\n}];"
       },
       "id": "18528e2c-7424-4675-a12f-62311ce14b36",
       "name": "Extract Context",
@@ -139,14 +139,27 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Extract Context').item.json.chatId }}",
-        "text": "={{ $('Parse Output').item.json.fullOutput }}",
+        "jsCode": "const MAX = 4000;\nconst fullOutput = $('Parse Output').first().json.fullOutput || '';\nconst chatId = $('Extract Context').first().json.chatId;\n\nfunction splitText(text, max) {\n  if (!text) return [''];\n  if (text.length <= max) return [text];\n  const parts = [];\n  let remaining = text;\n  while (remaining.length > 0) {\n    if (remaining.length <= max) {\n      parts.push(remaining);\n      break;\n    }\n    let sliceEnd = max;\n    const lastDouble = remaining.lastIndexOf('\\n\\n', max);\n    const lastSingle = remaining.lastIndexOf('\\n', max);\n    const lastSpace = remaining.lastIndexOf(' ', max);\n    if (lastDouble > max * 0.5) sliceEnd = lastDouble;\n    else if (lastSingle > max * 0.5) sliceEnd = lastSingle;\n    else if (lastSpace > max * 0.5) sliceEnd = lastSpace;\n    parts.push(remaining.slice(0, sliceEnd).trimEnd());\n    remaining = remaining.slice(sliceEnd).trimStart();\n  }\n  return parts;\n}\n\nreturn splitText(fullOutput, MAX).map(chunk => ({\n  json: { chatId, chunk }\n}));"
+      },
+      "id": "7a2f1c3e-5b8d-4e0a-9c1f-4d6b2e8a7c91",
+      "name": "Split Long Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.chunk }}",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        816,
+        1040,
         304
       ],
       "id": "ebd21453-7a4b-4fa2-bd5b-2c81e9dbf721",
@@ -167,7 +180,9 @@
           "value": "claude-sonnet-4-5-20250929",
           "cachedResultName": "Claude Sonnet 4.5"
         },
-        "options": {}
+        "options": {
+          "maxTokensToSample": 8192
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
@@ -212,8 +227,8 @@
       ],
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Extract Context').item.json.sessionId }}",
-        "contextWindowLength": 20
+        "sessionKey": "={{ $('Extract Context').item.json.sessionKey }}",
+        "contextWindowLength": 100
       }
     }
   ],
@@ -273,11 +288,22 @@
       "main": [
         [
           {
-            "node": "Send a text message",
+            "node": "Split Long Message",
             "type": "main",
             "index": 0
           }
         ],
+        [
+          {
+            "node": "Split Long Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Long Message": {
+      "main": [
         [
           {
             "node": "Send a text message",
@@ -326,7 +352,8 @@
     "binaryMode": "separate",
     "timeSavedMode": "fixed",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "executionTimeout": 300
   },
   "staticData": null,
   "pinData": {},
