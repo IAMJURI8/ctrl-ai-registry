@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "mcp__notion__API-post-search",
-      "mcp__notion__API-get-block-children"
+      "mcp__notion__API-get-block-children",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('agents/a1-sarah-hr-manager/workflow.json','utf8'\\)\\); console.log\\('valid JSON'\\)\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
     ]
   }
 }
