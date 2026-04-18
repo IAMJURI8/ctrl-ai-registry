@@ -25,3 +25,11 @@ When Julian says "work through pending handoffs" (or similar), read the Strategy
 - Never commit without being asked
 - Prefer editing existing files over creating new ones
 - For strategy context, fetch from Notion — never rely on local copies
+## Agent build handoff
+When Julian asks Claude Code to build an agent from a Notion URL:
+1. `notion-fetch` the page to read the spec, appearance fields, and profile picture.
+2. Create `agents/[id]-[short-name]/system-prompt.xml` (from the spec in the page body) and `workflow.json` (cloned from a template or sibling agent).
+3. Update the Notion row: status → `building`, GitHub folder link filled, version notes added.
+4. Report completion.
+
+The Notion row is the handoff payload. No prompt is pasted into Claude Code.
