@@ -8,7 +8,7 @@ Three canonical resources, read via Notion MCP (`notion-fetch`, `notion-update-p
 - Agent Registry DB — find via `notion-search`. Canonical roster of all agents. Update when building, activating, or retiring an agent.
 At the start of any session where current state matters, fetch the Strategy Digest. Do not cache strategy content in this file or anywhere else in the repo.
 ## Handoff protocol
-When Julian says "work through pending handoffs" (or similar), read the Strategy Digest "Pending Handoffs" section, execute items in order, and for each completed item move it to "Recently Completed" with a brief note on what was done and any commit links. If an entry is unclear, ask before executing.
+At the start of every session, fetch the Strategy Digest and report what's in "Pending Handoffs." If items exist, list them briefly (title + one-line task) and ask Julian whether to work through them, which ones, or defer. Do not auto-execute. When Julian confirms, execute items in order and for each completed item move it to "Recently Completed" with a brief note on what was done and any commit links. If an entry is unclear, ask before executing.
 ## Repo conventions
 - Agent folders: `agents/[id]-[short-name]/` with `system-prompt.xml` and `workflow.json`
 - Status values: `active`, `building`, `planned`, `retired`
