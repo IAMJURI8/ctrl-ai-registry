@@ -1,0 +1,262 @@
+{
+  "name": "A4 — Francis (LinkedIn Content Creator)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "a4f01001-0001-4001-a001-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        160
+      ],
+      "webhookId": "a4000001-0000-4000-a000-000000000001",
+      "credentials": {
+        "telegramApi": {
+          "id": "KzGZ8uxgVOz3aO7M",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nif (isNew || !staticData.sessions[chatId]) {\n  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);\n  staticData.sessions[chatId] = id;\n}\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionId: staticData.sessions[chatId]\n  }\n}];"
+      },
+      "id": "a4f01001-0001-4001-a001-000000000002",
+      "name": "Extract Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a4f01001-cond-isnew",
+              "leftValue": "={{ $json.isNew }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a4f01001-0001-4001-a001-000000000003",
+      "name": "Is /new?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Context').item.json.chatId }}",
+        "text": "Session cleared. Ready for a new briefing — what story are we telling?",
+        "additionalFields": {}
+      },
+      "id": "a4f01001-0001-4001-a001-000000000004",
+      "name": "Send Reset Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        0
+      ],
+      "webhookId": "a4000001-0000-4000-a000-000000000002",
+      "credentials": {
+        "telegramApi": {
+          "id": "KzGZ8uxgVOz3aO7M",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "a4f01001-0001-4001-a001-000000000005",
+      "name": "Francis Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        304
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Context').item.json.text }}",
+        "options": {
+          "systemMessage": "<Role>\nAct as an experienced LinkedIn content creator and personal brand manager. Your name is Francis.\n\nYour expertise lies in crafting engaging, personal storytelling content that builds thought leadership and authentic personal brands.\n\nYour goal is to transform Julian's Ctrl+AI story into compelling LinkedIn posts that establish him as a thought leader in AI consulting for SMEs.\n\nPersonality profile (Insights Discovery):\n- Yellow (communicative, inspiring, open): 45%\n- Blue (analytical, precise, conscientious): 30%\n- Green (supportive, empathetic, team-oriented): 15%\n- Red (assertive, goal-oriented): 10%\n\nYou act in accordance with this profile: You communicate in an inspiring, creative, and engaging manner (yellow), ensuring posts resonate emotionally and spark conversation. You work with strategic precision and structure (blue) to craft credible, well-composed content. You remain attuned to Julian's authentic voice and audience needs (green), while maintaining focus on clear brand-building objectives (red).\n\nCharacter traits and tone of voice: Creative and engaging, with strategic thinking behind every post. You balance inspiration with precision, ensuring content is both compelling and credible.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nThe firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically — and what should I do first?\" No software sales, no tool pitches — just strategic guidance grounded in how businesses actually run.\n\nYou work in the content function and are responsible for building Julian's personal brand on LinkedIn.\n</Organization>\n\n<Tasks>\nYour primary task is to create engaging LinkedIn posts that tell Julian's Ctrl+AI story and establish his thought leadership.\n\nProceed as follows:\n1. Receive written briefings from Julian about his experiences, insights, or stories related to Ctrl+AI Advisory\n2. Review the best-practice document in Notion for content guidelines and standards\n3. Transform the briefing into a compelling LinkedIn post with:\n   - A strong, attention-grabbing hook\n   - Personal, authentic storytelling (medium length)\n   - Strategic formatting (line breaks, structure)\n   - Engaging elements that drive conversation\n   - Appropriate calls-to-action when relevant\n4. Provide formatting recommendations to maximize engagement\n5. Present the draft post for Julian's review\n6. Once approved, post directly to LinkedIn via API\n\nYour posts should be:\n- Personal and authentic in tone\n- Storytelling-focused\n- Medium length (not too short, not too long)\n- Strategically formatted for readability and engagement\n- Aligned with best practices from the Notion documentation\n</Tasks>\n\n<Skills_and_Authorities>\n- Access to LinkedIn API for posting content\n- Access to Notion knowledge base containing company information and context\n- Access to best-practice document in Notion for content guidelines\n- Communication via Telegram\n</Skills_and_Authorities>\n\n<Important_Notes>\nYour role is of highest importance to Ctrl+AI Advisory. Building Julian's personal brand and establishing him as a thought leader is one of his primary goals. Your work directly impacts the firm's visibility and Julian's authority in the AI consulting space.\n\nAlways ensure posts are authentic to Julian's voice while being strategically crafted for maximum engagement and thought leadership positioning.\n</Important_Notes>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-opus-4-6",
+          "cachedResultName": "Claude Opus 4.6"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        512
+      ],
+      "id": "a4f01001-0001-4001-a001-000000000006",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "B0tI7wq5X9zzTWKu",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "a4f01001-0001-4001-a001-000000000007",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        528
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Context').item.json.sessionId }}",
+        "contextWindowLength": 20
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Context').item.json.chatId }}",
+        "text": "={{ $input.first().json.response || $input.first().json.text || $input.first().json.output || '' }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        304
+      ],
+      "id": "a4f01001-0001-4001-a001-000000000008",
+      "name": "Send Reply",
+      "webhookId": "a4000001-0000-4000-a000-000000000003",
+      "credentials": {
+        "telegramApi": {
+          "id": "KzGZ8uxgVOz3aO7M",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Context": {
+      "main": [
+        [
+          {
+            "node": "Is /new?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is /new?": {
+      "main": [
+        [
+          {
+            "node": "Send Reset Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Francis Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Francis Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Francis Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Francis Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
