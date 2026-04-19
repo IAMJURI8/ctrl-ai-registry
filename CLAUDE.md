@@ -25,6 +25,21 @@ At the start of every session, fetch the Strategy Digest and report what's in "P
 - Never commit without being asked
 - Prefer editing existing files over creating new ones
 - For strategy context, fetch from Notion — never rely on local copies
+## VPS Claude Code
+Running on Hostinger VPS as user `juri` (non-root, in sudo and docker groups).
+
+**Reattach after SSH:** `su - juri && tmux attach -t claude`
+
+**Restart Remote Control after reboot:**
+```
+tmux new-session -d -s claude
+tmux send-keys -t claude 'claude --dangerously-skip-permissions' Enter
+```
+
+**`--dangerously-skip-permissions` rationale:** Julian approves commands via the Android app without seeing the terminal anyway. Skip-permissions removes redundant prompts; Hostinger daily backups (2-day rolling) + manual baseline snapshot are the actual safety net.
+
+**Primary client:** Claude Android app via Remote Control. No laptop required.
+
 ## Agent build handoff
 When Julian asks Claude Code to build an agent from a Notion URL:
 1. `notion-fetch` the page to read the spec, appearance fields, and profile picture.
