@@ -8,33 +8,33 @@
         ],
         "additionalFields": {}
       },
-      "id": "a4f01001-0001-4001-a001-000000000001",
+      "id": "a4-node-01",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        -656,
-        160
+        -704,
+        192
       ],
-      "webhookId": "a4000001-0000-4000-a000-000000000001",
+      "webhookId": "41716dde-8622-443f-b270-848a1bd9b778",
       "credentials": {
         "telegramApi": {
-          "id": "KzGZ8uxgVOz3aO7M",
-          "name": "Telegram account"
+          "id": "AXoba8CinTHCfebr",
+          "name": "Telegram account 2"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nif (isNew || !staticData.sessions[chatId]) {\n  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);\n  staticData.sessions[chatId] = id;\n}\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionId: staticData.sessions[chatId]\n  }\n}];"
+        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst lower = text.toLowerCase();\nconst isNew = lower === '/new';\nconst isPostCommand = lower === '/post';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\nif (!staticData.pending) staticData.pending = {};\n\nif (isNew) {\n  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);\n  staticData.sessions[chatId] = id;\n  staticData.pending[chatId] = null;\n} else if (!staticData.sessions[chatId]) {\n  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);\n  staticData.sessions[chatId] = id;\n}\n\nconst pendingPost = staticData.pending[chatId] || null;\nconst isPost = isPostCommand && !!pendingPost;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    isPost,\n    sessionId: staticData.sessions[chatId],\n    pendingPost\n  }\n}];"
       },
-      "id": "a4f01001-0001-4001-a001-000000000002",
+      "id": "a4-node-02",
       "name": "Extract Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -432,
-        160
+        -480,
+        192
       ]
     },
     {
@@ -47,7 +47,7 @@
           },
           "conditions": [
             {
-              "id": "a4f01001-cond-isnew",
+              "id": "a4-cond-isnew",
               "leftValue": "={{ $json.isNew }}",
               "rightValue": true,
               "operator": {
@@ -60,13 +60,13 @@
         },
         "options": {}
       },
-      "id": "a4f01001-0001-4001-a001-000000000003",
+      "id": "a4-node-03",
       "name": "Is /new?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -208,
-        160
+        -256,
+        192
       ]
     },
     {
@@ -77,38 +77,38 @@
           "appendAttribution": false
         }
       },
-      "id": "a4f01001-0001-4001-a001-000000000004",
+      "id": "a4-node-04",
       "name": "Send Reset Confirmation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        80,
+        -48,
         0
       ],
-      "webhookId": "a4000001-0000-4000-a000-000000000002",
+      "webhookId": "4019cfe1-cf4d-4785-809b-fd4b00e34ac6",
       "credentials": {
         "telegramApi": {
-          "id": "KzGZ8uxgVOz3aO7M",
-          "name": "Telegram account"
+          "id": "AXoba8CinTHCfebr",
+          "name": "Telegram account 2"
         }
       }
     },
     {
-      "id": "a4f01001-0001-4001-a001-000000000005",
-      "name": "Francis Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        16,
-        304
-      ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $('Extract Context').item.json.text }}",
         "options": {
-          "systemMessage": "<Role>\nAct as an experienced LinkedIn content creator and personal brand manager. Your name is Francis.\n\nYour expertise lies in crafting engaging, personal storytelling content that builds thought leadership and authentic personal brands.\n\nYour goal is to transform Julian's Ctrl+AI story into compelling LinkedIn posts that establish him as a thought leader in AI consulting for SMEs.\n\nPersonality profile (Insights Discovery):\n- Yellow (communicative, inspiring, open): 45%\n- Blue (analytical, precise, conscientious): 30%\n- Green (supportive, empathetic, team-oriented): 15%\n- Red (assertive, goal-oriented): 10%\n\nYou act in accordance with this profile: You communicate in an inspiring, creative, and engaging manner (yellow), ensuring posts resonate emotionally and spark conversation. You work with strategic precision and structure (blue) to craft credible, well-composed content. You remain attuned to Julian's authentic voice and audience needs (green), while maintaining focus on clear brand-building objectives (red).\n\nCharacter traits and tone of voice: Creative and engaging, with strategic thinking behind every post. You balance inspiration with precision, ensuring content is both compelling and credible.\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nThe firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically — and what should I do first?\" No software sales, no tool pitches — just strategic guidance grounded in how businesses actually run.\n\nYou work in the content function and are responsible for building Julian's personal brand on LinkedIn.\n</Organization>\n\n<Tasks>\nYour primary task is to create engaging LinkedIn posts that tell Julian's Ctrl+AI story and establish his thought leadership.\n\nProceed as follows:\n1. Receive written briefings from Julian about his experiences, insights, or stories related to Ctrl+AI Advisory\n2. Review the best-practice document in Notion for content guidelines and standards\n3. Transform the briefing into a compelling LinkedIn post with:\n   - A strong, attention-grabbing hook\n   - Personal, authentic storytelling (medium length)\n   - Strategic formatting (line breaks, structure)\n   - Engaging elements that drive conversation\n   - Appropriate calls-to-action when relevant\n4. Provide formatting recommendations to maximize engagement\n5. Present the draft post for Julian's review\n6. Once approved, post directly to LinkedIn via API\n\nYour posts should be:\n- Personal and authentic in tone\n- Storytelling-focused\n- Medium length (not too short, not too long)\n- Strategically formatted for readability and engagement\n- Aligned with best practices from the Notion documentation\n</Tasks>\n\n<Skills_and_Authorities>\n- Access to LinkedIn API for posting content\n- Access to Notion knowledge base containing company information and context\n- Access to best-practice document in Notion for content guidelines\n- Communication via Telegram\n</Skills_and_Authorities>\n\n<Important_Notes>\nYour role is of highest importance to Ctrl+AI Advisory. Building Julian's personal brand and establishing him as a thought leader is one of his primary goals. Your work directly impacts the firm's visibility and Julian's authority in the AI consulting space.\n\nAlways ensure posts are authentic to Julian's voice while being strategically crafted for maximum engagement and thought leadership positioning.\n</Important_Notes>"
+          "systemMessage": "=<Role>\nYou are Francis, a LinkedIn content creator and personal brand manager for Julian Ritt (JuRi), Head of Digital Solutions, Data and AI at Porsche Asia Pacific, based in Singapore.\n\nJulian is publicly running Project Zero, a documented experiment simulating a full AI-powered consulting firm called Ctrl+AI Advisory, where every business function is built and run by AI agents. He writes as a practitioner sharing honestly, not as an influencer performing.\n\nHis background combines enterprise AI at a global OEM with hands-on solo AI experimentation. Three years in Singapore is a lived reference point, not name-dropping. The target audience is practitioners, consultants, and AI-curious professionals. He is building thought leadership and personal brand, not selling anything.\n\nOne hard constraint applies to every post: no reference to launching a real business, departure from current role, relocation plans, or timelines. Project Zero is framed as a learning experiment, not a business launch.\n\nPersonality profile (Insights Discovery): Yellow 45%, Blue 30%, Green 15%, Red 10%. Inspiring and creative but structured and precise, always in Julian's authentic voice.\n</Role>\n\n<Organization>\nCtrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian. The firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically, and what should I do first?\" No software sales, no tool pitches, just strategic guidance grounded in how businesses actually run. You work in the content function and are responsible for building Julian's personal brand on LinkedIn.\n</Organization>\n\n<BestPractices>\nThe block below is the authoritative, live content playbook pulled from Notion at runtime. It overrides anything that appears to conflict elsewhere in this prompt. Apply every rule in it: length targets, forbidden vocabulary, formatting, hook patterns, voice (practitioner not guru), the humanization pass, the cringe test.\n\n{{ $('Flatten Best Practices').item.json.markdown }}\n</BestPractices>\n\n<NonNegotiables>\nEven if the injected document above is unavailable or truncated, these rules always hold:\n- No em dashes. Use commas, periods, or semicolons.\n- No Oxford commas.\n- Target 800 to 1,000 characters. Hard cap 1,100.\n- 5th to 7th grade reading level. Short sentences. Plain words.\n- Never end with \"Agree?\" or \"Thoughts?\" or any engagement bait variant.\n- At least one concrete detail only Julian could know: a real number, a named tool, a specific outcome.\n- Never imply Julian is leaving his role or launching a business. Project Zero is an experiment.\n</NonNegotiables>\n\n<Tasks>\nWhen you receive a briefing:\n1. Read the topic, key point, raw material, and optional post type.\n2. If raw material is thin, ask for one specific detail before drafting: a real number, a named tool, a concrete outcome. Do not invent specifics.\n3. Draft a LinkedIn post applying the BestPractices above.\n4. Suggest one image following the BestPractices \"Images\" section. Recommend a real screenshot, photo, or simple diagram. Never generic stock or decorative AI art.\n5. Deliver the response in this exact format:\n\n[One short formatting note, optional, max 1 or 2 sentences]\n\n<post>\n[the complete LinkedIn post text, ready to publish]\n</post>\n\n<image>\n[one sentence describing the recommended image, concrete and specific]\n</image>\n\nNo preamble, no welcome, nothing after the closing </image> tag.\n</Tasks>\n\n<PublishingFlow>\nThe workflow that runs you extracts only the content inside <post> tags when Julian confirms with /post. The <image> block is for Julian's reference and is not published. Always include both tags on every draft so Julian has the image suggestion alongside the copy.\n</PublishingFlow>\n\n<Important_Notes>\nDo not use emojis in your conversational replies, only inside the post itself if the BestPractices allow it. Do not add anything after the closing </image> tag. If the BestPractices injection is empty, say so and ask Julian to check the source document before drafting.\n</Important_Notes>"
         }
-      }
+      },
+      "id": "a4-node-05",
+      "name": "Francis Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        352
+      ]
     },
     {
       "parameters": {
@@ -120,14 +120,14 @@
         },
         "options": {}
       },
+      "id": "a4-node-06",
+      "name": "Anthropic Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        -64,
-        512
+        -208,
+        560
       ],
-      "id": "a4f01001-0001-4001-a001-000000000006",
-      "name": "Anthropic Chat Model",
       "credentials": {
         "anthropicApi": {
           "id": "B0tI7wq5X9zzTWKu",
@@ -136,42 +136,251 @@
       }
     },
     {
-      "id": "a4f01001-0001-4001-a001-000000000007",
-      "name": "Conversation Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        240,
-        528
-      ],
       "parameters": {
         "sessionIdType": "customKey",
         "sessionKey": "={{ $('Extract Context').item.json.sessionId }}",
         "contextWindowLength": 20
+      },
+      "id": "a4-node-07",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.response || $input.first().json.text || $input.first().json.output || '';\nconst chatId = $('Extract Context').item.json.chatId;\n\nconst postMatch = agentOutput.match(/<post>([\\s\\S]*?)<\\/post>/);\nconst postContent = postMatch ? postMatch[1].trim() : null;\n\nlet textContent = agentOutput;\nif (postMatch) textContent = textContent.replace(postMatch[0], '').trim();\n\nif (postContent) {\n  const staticData = $getWorkflowStaticData('global');\n  if (!staticData.pending) staticData.pending = {};\n  staticData.pending[chatId] = postContent;\n}\n\nreturn [{\n  json: {\n    chatId,\n    textContent,\n    postContent,\n    hasPost: !!postContent,\n    fullOutput: agentOutput\n  }\n}];"
+      },
+      "id": "a4-node-08",
+      "name": "Parse Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a4-cond-haspost",
+              "leftValue": "={{ $json.hasPost }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a4-node-09",
+      "name": "Has Post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        528,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "LinkedIn-Version",
+              "value": "202604"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"author\": \"urn:li:person:ZLHWM5YOBe\",\n  \"commentary\": {{ JSON.stringify($json.pendingPost) }},\n  \"visibility\": \"PUBLIC\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  }\n}",
+        "options": {}
+      },
+      "id": "a4-node-10",
+      "name": "Save LinkedIn Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        752,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FRuioKTMb9qUTlmX",
+          "name": "LinkedIn Bearer Token"
+        }
       }
     },
     {
       "parameters": {
-        "chatId": "={{ $('Extract Context').item.json.chatId }}",
-        "text": "={{ $input.first().json.response || $input.first().json.text || $input.first().json.output || '' }}",
+        "chatId": "={{ $('Parse Output').item.json.chatId }}",
+        "text": "={{ ($('Parse Output').item.json.textContent ? $('Parse Output').item.json.textContent + '\\n\\n---\\n\\n' : '') + $('Parse Output').item.json.postContent + '\\n\\n---\\nStaged. Reply /post to publish to LinkedIn, or keep iterating.' }}",
         "additionalFields": {
           "appendAttribution": false
         }
       },
+      "id": "a4-node-11",
+      "name": "Send Post Reply",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        368,
-        304
+        960,
+        192
       ],
-      "id": "a4f01001-0001-4001-a001-000000000008",
-      "name": "Send Reply",
-      "webhookId": "a4000001-0000-4000-a000-000000000003",
+      "webhookId": "bc7c296c-416e-423a-94fd-987be577bafc",
       "credentials": {
         "telegramApi": {
-          "id": "KzGZ8uxgVOz3aO7M",
-          "name": "Telegram account"
+          "id": "AXoba8CinTHCfebr",
+          "name": "Telegram account 2"
         }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.fullOutput }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "a4-node-12",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        480
+      ],
+      "webhookId": "59cc4ff1-ec6b-455c-a4cd-24d4221dd141",
+      "credentials": {
+        "telegramApi": {
+          "id": "AXoba8CinTHCfebr",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "id": "a4-node-13",
+      "name": "Is /post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        256
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a4-cond-ispost",
+              "leftValue": "={{ $json.isPost }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a4-node-14",
+      "name": "Send Publish Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        96
+      ],
+      "parameters": {
+        "chatId": "={{ $('Extract Context').item.json.chatId }}",
+        "text": "Published to LinkedIn.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "AXoba8CinTHCfebr",
+          "name": "Telegram account 2"
+        }
+      },
+      "webhookId": "25daba7e-4509-4901-982c-7280dbe662b0"
+    },
+    {
+      "id": "8f3f2bc1-c730-4160-8a68-b10143c3eba5",
+      "name": "Fetch Best Practices",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        416
+      ],
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "347824ba-ea2b-81d9-b1ba-f69b99e29637",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "fetchNestedBlocks": true
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "a0006a53-3dc8-4087-9a0e-4f5c73f3a52f",
+      "name": "Flatten Best Practices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        416
+      ],
+      "parameters": {
+        "jsCode": "const blocks = $input.all().map(i => i.json);\nconst out = [];\n\nfunction rtToMd(rt) {\n  if (!Array.isArray(rt)) return '';\n  return rt.map(r => {\n    let t = r.plain_text !== undefined ? r.plain_text : (r.text && r.text.content) || '';\n    const a = r.annotations || {};\n    if (a.code) t = '`' + t + '`';\n    if (a.bold) t = '**' + t + '**';\n    if (a.italic) t = '*' + t + '*';\n    return t;\n  }).join('');\n}\n\nfor (const b of blocks) {\n  const type = b.type;\n  if (!type) continue;\n  const d = b[type] || {};\n  const t = rtToMd(d.rich_text || []);\n  switch (type) {\n    case 'paragraph': if (t) { out.push(t); out.push(''); } break;\n    case 'heading_1': out.push(''); out.push('# ' + t); out.push(''); break;\n    case 'heading_2': out.push(''); out.push('## ' + t); out.push(''); break;\n    case 'heading_3': out.push(''); out.push('### ' + t); out.push(''); break;\n    case 'bulleted_list_item': out.push('- ' + t); break;\n    case 'numbered_list_item': out.push('1. ' + t); break;\n    case 'quote': out.push('> ' + t); out.push(''); break;\n    case 'callout': { const emoji = (d.icon && d.icon.emoji) || ''; out.push('> ' + (emoji ? emoji + ' ' : '') + t); out.push(''); break; }\n    case 'divider': out.push(''); out.push('---'); out.push(''); break;\n    case 'code': out.push('```' + (d.language || '')); out.push(t); out.push('```'); out.push(''); break;\n    case 'to_do': out.push('- [ ] ' + t); break;\n    case 'toggle': out.push('- ' + t); break;\n    default: if (t) { out.push(t); out.push(''); }\n  }\n}\n\nconst markdown = out.join('\\n').trim();\nreturn [{ json: { markdown, blockCount: blocks.length } }];"
       }
     }
   ],
@@ -209,7 +418,7 @@
         ],
         [
           {
-            "node": "Francis Agent",
+            "node": "Is /post?",
             "type": "main",
             "index": 0
           }
@@ -218,6 +427,35 @@
     },
     "Francis Agent": {
       "main": [
+        [
+          {
+            "node": "Parse Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Output": {
+      "main": [
+        [
+          {
+            "node": "Has Post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Post?": {
+      "main": [
+        [
+          {
+            "node": "Send Post Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Send Reply",
@@ -248,14 +486,64 @@
           }
         ]
       ]
+    },
+    "Is /post?": {
+      "main": [
+        [
+          {
+            "node": "Save LinkedIn Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Best Practices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save LinkedIn Draft": {
+      "main": [
+        [
+          {
+            "node": "Send Publish Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Best Practices": {
+      "main": [
+        [
+          {
+            "node": "Flatten Best Practices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Best Practices": {
+      "main": [
+        [
+          {
+            "node": "Francis Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "timeSavedMode": "fixed",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": true
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
   "staticData": null,
   "pinData": {},
