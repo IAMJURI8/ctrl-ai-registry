@@ -14,6 +14,7 @@ At the start of every session, fetch the Strategy Digest and report what's in "P
 - Status values: `active`, `building`, `planned`, `retired`
 - Commit format: `type: description [date]`, never skip hooks
 - The Notion Agent Registry DB is canonical for agent state. Any `registry.json` file in the repo is deprecated.
+- Every n8n Telegram node must have `appendAttribution: false` in `parameters.additionalFields`. Applies to all agents and any node modifications. Keep live n8n state and `workflow.json` in sync.
 ## Writing principles
 - No emojis
 - No filler phrases ("Great!", "Sure!")

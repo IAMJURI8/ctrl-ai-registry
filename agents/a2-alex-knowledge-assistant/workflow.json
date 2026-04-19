@@ -265,7 +265,9 @@
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
         "text": "={{ $('Parse Classification').item.json.summary }}",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "webhookId": "a2-alex-send-confirm"
     },
@@ -279,7 +281,9 @@
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
         "text": "={{ $('Parse Classification').item.json.clarificationText }}",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "webhookId": "a2-alex-send-clarif"
     }

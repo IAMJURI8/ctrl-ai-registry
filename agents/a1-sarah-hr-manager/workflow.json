@@ -73,7 +73,9 @@
       "parameters": {
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
         "text": "Session cleared. Ready for a new onboarding — who are we bringing on board?",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "8ae7e03c-dd95-422b-9bb5-37c947860042",
       "name": "Send Reset Confirmation",

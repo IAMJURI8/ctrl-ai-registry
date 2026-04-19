@@ -73,7 +73,9 @@
       "parameters": {
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
         "text": "Session cleared. Ready for a new briefing — what story are we telling?",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "a4f01001-0001-4001-a001-000000000004",
       "name": "Send Reset Confirmation",
@@ -152,7 +154,9 @@
       "parameters": {
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
         "text": "={{ $input.first().json.response || $input.first().json.text || $input.first().json.output || '' }}",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
