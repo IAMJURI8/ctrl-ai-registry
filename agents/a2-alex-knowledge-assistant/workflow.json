@@ -1,5 +1,7 @@
 {
-  "name": "A2 \u2014 Alex (Personal Knowledge Assistant)",
+  "_notes": "The Alex Agent's systemMessage in this exported file is a placeholder. The live workflow on n8n holds the full system prompt loaded from system-prompt.xml. The canonical version of the prompt is system-prompt.xml in this folder.",
+  "n8nWorkflowId": "3PDLYV2gpwbQCqNp",
+  "name": "A2 — Alex (Personal Knowledge Assistant)",
   "nodes": [
     {
       "id": "a1000000-0000-0000-0000-000000000001",
@@ -273,7 +275,7 @@
         "promptType": "define",
         "text": "={{ $json.userMessage }}",
         "options": {
-          "systemMessage": "Loaded from agents/a2-alex-knowledge-assistant/system-prompt.xml at workflow import time. See that file for the canonical version."
+          "systemMessage": "PLACEHOLDER — see system-prompt.xml for canonical version."
         }
       }
     },
@@ -287,23 +289,34 @@
         528
       ],
       "parameters": {
-        "toolDescription": "Search the Alex Knowledge Base. Returns pages matching filters, newest first by default. Each result has `id` (page ID for follow-up ops) and `properties`. The IDs of returned results will stay in the agent's working memory for later updateEntry/archiveEntry calls.",
+        "toolDescription": "Search the Alex Knowledge Base. Pass a Notion databases/query body (filter, sorts, page_size). Returns results with `id` and `properties`. IDs stay in working memory for follow-up updateEntry/archiveEntry.",
         "method": "POST",
         "url": "https://api.notion.com/v1/databases/50f36c97-1e2d-45fc-8483-c8a223523077/query",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{payload}",
+        "placeholderDefinitions": {
+          "values": [
             {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
+              "name": "payload",
+              "description": "Notion databases/query POST body as a JSON object. Supports filter (Notion filter object with property/select/title/multi_select conditions and and/or composition), sorts (default created_time desc), page_size (default 10, max 25).",
+              "type": "json"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($fromAI('body', 'Notion databases/query POST body as a JSON object. Keys: filter (optional Notion filter object \u2014 supports compound and/or plus property filters on select/multi_select/title properties), sorts (optional, default created_time desc), page_size (optional, default 10, max 25). Example: { \"filter\": { \"property\": \"GTD Status\", \"select\": { \"equals\": \"Inbox\" } }, \"page_size\": 10 }', 'json')) }}"
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28",
+              "valueProvider": "fieldValue"
+            }
+          ]
+        }
       },
       "credentials": {
         "notionApi": {
@@ -324,15 +337,26 @@
       "parameters": {
         "toolDescription": "Fetch one KB page by id. Use when you need full property detail on a single entry.",
         "method": "GET",
-        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID (from a prior queryKB result)', 'string') }}",
+        "url": "https://api.notion.com/v1/pages/{pageId}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "pageId",
+              "description": "Notion page ID (UUID with or without dashes) from a prior queryKB result.",
+              "type": "string"
+            }
+          ]
+        },
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
             {
               "name": "Notion-Version",
-              "value": "2022-06-28"
+              "value": "2022-06-28",
+              "valueProvider": "fieldValue"
             }
           ]
         }
@@ -354,23 +378,34 @@
         528
       ],
       "parameters": {
-        "toolDescription": "Create a new KB entry. Use for fresh captures (ideas, links, drafts, references). Body must include parent.database_id and properties. See system prompt <NotionSchema> for property shapes.",
+        "toolDescription": "Create a new KB entry. Pass a full Notion pages POST body with parent.database_id = \"50f36c97-1e2d-45fc-8483-c8a223523077\" and properties (Name title, Type select, GTD Status select, Source select, Tags multi_select, Notes rich_text).",
         "method": "POST",
         "url": "https://api.notion.com/v1/pages",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{payload}",
+        "placeholderDefinitions": {
+          "values": [
             {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
+              "name": "payload",
+              "description": "Full Notion pages POST body. Must include parent.database_id = \"50f36c97-1e2d-45fc-8483-c8a223523077\" and a properties object matching the Alex KB schema (Name title, Type select, GTD Status select, Source select, Tags multi_select, Notes rich_text).",
+              "type": "json"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($fromAI('body', 'Full Notion pages create body. Must include parent.database_id = \"50f36c97-1e2d-45fc-8483-c8a223523077\" and properties object matching the Alex KB schema (Name title, Type select, GTD Status select, Source select, Tags multi_select, Notes rich_text).', 'json')) }}"
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28",
+              "valueProvider": "fieldValue"
+            }
+          ]
+        }
       },
       "credentials": {
         "notionApi": {
@@ -389,23 +424,39 @@
         528
       ],
       "parameters": {
-        "toolDescription": "Update properties of an existing KB entry by pageId. Pass only the properties you want to change.",
+        "toolDescription": "Update an existing KB entry by pageId. Pass a body with a `properties` object containing only the properties you want to change.",
         "method": "PATCH",
-        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID to update (from a prior queryKB result)', 'string') }}",
+        "url": "https://api.notion.com/v1/pages/{pageId}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{payload}",
+        "placeholderDefinitions": {
+          "values": [
             {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
+              "name": "pageId",
+              "description": "Notion page ID (UUID with or without dashes) from a prior queryKB result.",
+              "type": "string"
+            },
+            {
+              "name": "payload",
+              "description": "Notion pages PATCH body: { \"properties\": { ... } } containing only the properties to update. Shapes: title, select, multi_select, rich_text.",
+              "type": "json"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ properties: $fromAI('properties', 'Object with the subset of properties to update, same shape as Notion page properties (e.g. { \"GTD Status\": { \"select\": { \"name\": \"Reference\" } } }).', 'json') }) }}"
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28",
+              "valueProvider": "fieldValue"
+            }
+          ]
+        }
       },
       "credentials": {
         "notionApi": {
@@ -426,21 +477,32 @@
       "parameters": {
         "toolDescription": "Archive (soft-delete) a KB entry by pageId. ONLY call this AFTER the user has explicitly confirmed deletion in the current turn (see confirmation gate in system prompt).",
         "method": "PATCH",
-        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID to archive (from a prior queryKB result)', 'string') }}",
+        "url": "https://api.notion.com/v1/pages/{pageId}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"archived\": true}",
+        "placeholderDefinitions": {
+          "values": [
             {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
+              "name": "pageId",
+              "description": "Notion page ID (UUID with or without dashes) from a prior queryKB result.",
+              "type": "string"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"archived\": true}"
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28",
+              "valueProvider": "fieldValue"
+            }
+          ]
+        }
       },
       "credentials": {
         "notionApi": {
@@ -672,7 +734,5 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false,
     "binaryMode": "separate"
-  },
-  "n8nWorkflowId": "3PDLYV2gpwbQCqNp",
-  "_notes": "The Alex Agent's systemMessage in this exported file is a placeholder. The live workflow on n8n holds the full system prompt loaded from system-prompt.xml. The canonical version of the prompt is system-prompt.xml in this folder."
+  }
 }

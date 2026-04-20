@@ -1,5 +1,11 @@
 # Alex (A2) — Changelog
 
+## v0.3.1 — 2026-04-20 — Tool schema fixes
+Two fixes to make v0.3 actually work end-to-end with live Notion calls.
+
+- Headers migrated from legacy `headerParameters.parameters` to v1.1 `parametersHeaders.values` with `valueProvider: "fieldValue"` and `specifyHeaders: "keypair"`. The legacy key triggered an n8n fallback that injected a bogus `{name: "", sendIn: "headers"}` placeholder, which produced a tool schema with an empty-string property key and Anthropic rejected the request (`properties: Property keys should match pattern '^[a-zA-Z0-9_.-]{1,64}$'`).
+- Full-body placeholder renamed from `{body}` to `{payload}` in `queryKB`, `createEntry`, and `updateEntry`. In `ToolHttpRequest` utils, when `parameter.sendIn === parameter.name` the substitution loop assigns directly to `options[sendIn]` and skips the `bodyRaw` branch, so the `{body}` template was never substituted and `jsonParse` choked on the literal string.
+
 ## v0.3 — 2026-04-20 — Agentic CRUD
 Replaced the linear capture + query routing pipeline with a fully agentic AI Agent node that has direct Notion tool access. Alex now handles multi-turn CRUD conversations natively within a single context window: capture → query → reclassify → archive, all without workflow-level branching.
 
