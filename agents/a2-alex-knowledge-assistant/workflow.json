@@ -1,24 +1,38 @@
 {
-  "name": "A2 — Alex (Personal Knowledge Assistant)",
+  "name": "A2 \u2014 Alex (Personal Knowledge Assistant)",
   "nodes": [
     {
       "id": "a1000000-0000-0000-0000-000000000001",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [-960, 320],
+      "position": [
+        -960,
+        320
+      ],
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
-      "webhookId": "a2-alex-telegram-trigger"
+      "webhookId": "a2-alex-telegram-trigger",
+      "credentials": {
+        "telegramApi": {
+          "id": "XiPoK10AazY77yJ3",
+          "name": "Telegram Alex"
+        }
+      }
     },
     {
       "id": "a1000000-0000-0000-0000-000000000002",
       "name": "Extract Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-736, 320],
+      "position": [
+        -736,
+        320
+      ],
       "parameters": {
         "jsCode": "const msg = $input.first().json;\nconst message = msg.message || msg.channel_post || {};\nconst chatId = String(message.chat?.id || '');\nconst text = (message.text || message.caption || '').trim();\nconst voice = message.voice;\n\nlet inputType = 'text';\nlet voiceFileId = '';\nlet url = '';\n\nif (voice && voice.file_id) {\n  inputType = 'voice';\n  voiceFileId = voice.file_id;\n} else {\n  const urlMatch = text.match(/https?:\\/\\/\\S+/);\n  if (urlMatch && (text === urlMatch[0] || text.length < urlMatch[0].length + 80)) {\n    inputType = 'url';\n    url = urlMatch[0];\n  }\n}\n\nreturn [{ json: { chatId, inputType, text, voiceFileId, url } }];"
       }
@@ -28,19 +42,29 @@
       "name": "Route Input Type",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [-512, 320],
+      "position": [
+        -512,
+        320
+      ],
       "parameters": {
         "rules": {
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
                 "conditions": [
                   {
                     "id": "cond-text",
                     "leftValue": "={{ $json.inputType }}",
                     "rightValue": "text",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -50,13 +74,20 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
                 "conditions": [
                   {
                     "id": "cond-voice",
                     "leftValue": "={{ $json.inputType }}",
                     "rightValue": "voice",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -66,13 +97,20 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
                 "conditions": [
                   {
                     "id": "cond-url",
                     "leftValue": "={{ $json.inputType }}",
                     "rightValue": "url",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -90,24 +128,42 @@
       "name": "Get Voice File",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-272, 432],
+      "position": [
+        -272,
+        432
+      ],
       "parameters": {
         "resource": "file",
         "fileId": "={{ $('Extract Context').item.json.voiceFileId }}"
       },
-      "webhookId": "a2-alex-getfile"
+      "webhookId": "a2-alex-getfile",
+      "credentials": {
+        "telegramApi": {
+          "id": "XiPoK10AazY77yJ3",
+          "name": "Telegram Alex"
+        }
+      }
     },
     {
       "id": "a1000000-0000-0000-0000-000000000005",
       "name": "Whisper Transcribe",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [-48, 432],
+      "position": [
+        -48,
+        432
+      ],
       "parameters": {
         "resource": "audio",
         "operation": "transcribe",
         "binaryPropertyName": "data",
         "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "nRdAoZYQWiPHUZf1",
+          "name": "OpenAI account"
+        }
       }
     },
     {
@@ -115,13 +171,25 @@
       "name": "Fetch URL",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-272, 624],
+      "position": [
+        -272,
+        624
+      ],
       "parameters": {
         "method": "GET",
         "url": "={{ $('Extract Context').item.json.url }}",
         "options": {
-          "redirect": { "redirect": { "followRedirects": true, "maxRedirects": 5 } },
-          "response": { "response": { "responseFormat": "text" } },
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
           "timeout": 15000
         }
       }
@@ -131,7 +199,10 @@
       "name": "Extract Meta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-48, 624],
+      "position": [
+        -48,
+        624
+      ],
       "parameters": {
         "jsCode": "const item = $input.first().json;\nconst html = String(item.data || item.body || '');\nconst url = $('Extract Context').item.json.url;\n\nconst titleMatch = html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i);\nconst descMatch =\n  html.match(/<meta[^>]*name=[\"']description[\"'][^>]*content=[\"']([\\s\\S]*?)[\"']/i) ||\n  html.match(/<meta[^>]*content=[\"']([\\s\\S]*?)[\"'][^>]*name=[\"']description[\"']/i) ||\n  html.match(/<meta[^>]*property=[\"']og:description[\"'][^>]*content=[\"']([\\s\\S]*?)[\"']/i);\n\nfunction clean(s) {\n  return s.replace(/\\s+/g, ' ').trim();\n}\n\nreturn [{\n  json: {\n    url,\n    title: titleMatch ? clean(titleMatch[1]).slice(0, 200) : '',\n    description: descMatch ? clean(descMatch[1]).slice(0, 500) : ''\n  }\n}];"
       }
@@ -141,9 +212,12 @@
       "name": "Build Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 320],
+      "position": [
+        240,
+        320
+      ],
       "parameters": {
-        "jsCode": "const ctx = $('Extract Context').item.json;\nconst incoming = $input.first().json;\nlet userMessage = '';\n\nif (ctx.inputType === 'text') {\n  userMessage = ctx.text;\n} else if (ctx.inputType === 'voice') {\n  const transcript = incoming.text || incoming.transcript || '';\n  userMessage = `Voice transcript: ${transcript}`;\n} else if (ctx.inputType === 'url') {\n  const meta = incoming;\n  userMessage = `${meta.url} | title: ${meta.title || 'unknown'} | meta: ${meta.description || 'none'}`;\n  if (ctx.text && ctx.text !== meta.url && !ctx.text.startsWith('http')) {\n    userMessage = `${ctx.text}\\n\\n${userMessage}`;\n  }\n}\n\nreturn [{ json: { chatId: ctx.chatId, userMessage } }];"
+        "jsCode": "const ctx = $('Extract Context').item.json;\nconst incoming = $input.first().json;\nlet userMessage = '';\n\nif (ctx.inputType === 'text') {\n  userMessage = ctx.text;\n} else if (ctx.inputType === 'voice') {\n  const transcript = incoming.text || incoming.transcript || '';\n  userMessage = `Voice note: ${transcript}`;\n} else if (ctx.inputType === 'url') {\n  const meta = incoming;\n  userMessage = `URL: ${meta.url} | title: ${meta.title || 'unknown'} | meta: ${meta.description || 'none'}`;\n  if (ctx.text && ctx.text !== meta.url && !ctx.text.startsWith('http')) {\n    userMessage = `${ctx.text}\\n\\n${userMessage}`;\n  }\n}\n\nreturn [{ json: { chatId: ctx.chatId, userMessage } }];"
       }
     },
     {
@@ -151,7 +225,10 @@
       "name": "Anthropic Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [400, 528],
+      "position": [
+        400,
+        528
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -173,7 +250,10 @@
       "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [560, 528],
+      "position": [
+        560,
+        528
+      ],
       "parameters": {
         "sessionIdType": "customKey",
         "sessionKey": "={{ $('Extract Context').item.json.chatId }}",
@@ -185,7 +265,10 @@
       "name": "Alex Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
-      "position": [464, 320],
+      "position": [
+        464,
+        320
+      ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.userMessage }}",
@@ -195,153 +278,401 @@
       }
     },
     {
-      "id": "a1000000-0000-0000-0000-00000000000c",
-      "name": "Parse Classification",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [704, 320],
+      "id": "c0000000-0000-0000-0000-000000000001",
+      "name": "queryKB",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        528
+      ],
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst output = item.output || item.text || item.response || '';\nconst chatId = $('Extract Context').item.json.chatId;\n\nconst jsonMatch = output.match(/```json\\s*([\\s\\S]*?)```/);\nlet classification = null;\nlet isClarification = false;\nlet clarificationText = '';\n\nif (jsonMatch) {\n  try {\n    classification = JSON.parse(jsonMatch[1].trim());\n  } catch (e) {\n    isClarification = true;\n    clarificationText = output;\n  }\n} else {\n  isClarification = true;\n  clarificationText = output.trim();\n}\n\nlet tagsCsv = '';\nif (classification && Array.isArray(classification.tags)) {\n  tagsCsv = classification.tags.join(',');\n}\n\nreturn [{\n  json: {\n    chatId,\n    isClarification,\n    clarificationText,\n    classification,\n    name: classification?.name || '',\n    type: classification?.type || '',\n    gtdStatus: classification?.gtdStatus || 'Inbox',\n    source: classification?.source || 'Other',\n    tagsCsv,\n    notes: classification?.notes || '',\n    summary: classification?.summary || 'Saved.'\n  }\n}];"
-      }
-    },
-    {
-      "id": "a1000000-0000-0000-0000-00000000000d",
-      "name": "Is Clarification?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [928, 320],
-      "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
-          "conditions": [
+        "toolDescription": "Search the Alex Knowledge Base. Returns pages matching filters, newest first by default. Each result has `id` (page ID for follow-up ops) and `properties`. The IDs of returned results will stay in the agent's working memory for later updateEntry/archiveEntry calls.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/50f36c97-1e2d-45fc-8483-c8a223523077/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "id": "cond-clarif",
-              "leftValue": "={{ $json.isClarification }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "name": "Notion-Version",
+              "value": "2022-06-28"
             }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "a1000000-0000-0000-0000-00000000000e",
-      "name": "Notion Create Page",
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [1216, 432],
-      "parameters": {
-        "resource": "databasePage",
-        "operation": "create",
-        "databaseId": {
-          "__rl": true,
-          "value": "50f36c97-1e2d-45fc-8483-c8a223523077",
-          "mode": "id",
-          "cachedResultName": "Alex — Knowledge Base"
-        },
-        "title": "={{ $json.name }}",
-        "simple": true,
-        "propertiesUi": {
-          "propertyValues": [
-            { "key": "Type|select", "selectValue": "={{ $json.type }}" },
-            { "key": "GTD Status|select", "selectValue": "={{ $json.gtdStatus }}" },
-            { "key": "Source|select", "selectValue": "={{ $json.source }}" },
-            { "key": "Tags|multi_select", "multiSelectValue": "={{ $json.tagsCsv }}" },
-            { "key": "Notes|rich_text", "textContent": "={{ $json.notes }}" }
           ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($fromAI('body', 'Notion databases/query POST body as a JSON object. Keys: filter (optional Notion filter object \u2014 supports compound and/or plus property filters on select/multi_select/title properties), sorts (optional, default created_time desc), page_size (optional, default 10, max 25). Example: { \"filter\": { \"property\": \"GTD Status\", \"select\": { \"equals\": \"Inbox\" } }, \"page_size\": 10 }', 'json')) }}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000002",
+      "name": "getEntry",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        528
+      ],
+      "parameters": {
+        "toolDescription": "Fetch one KB page by id. Use when you need full property detail on a single entry.",
+        "method": "GET",
+        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID (from a prior queryKB result)', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000003",
+      "name": "createEntry",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        528
+      ],
+      "parameters": {
+        "toolDescription": "Create a new KB entry. Use for fresh captures (ideas, links, drafts, references). Body must include parent.database_id and properties. See system prompt <NotionSchema> for property shapes.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($fromAI('body', 'Full Notion pages create body. Must include parent.database_id = \"50f36c97-1e2d-45fc-8483-c8a223523077\" and properties object matching the Alex KB schema (Name title, Type select, GTD Status select, Source select, Tags multi_select, Notes rich_text).', 'json')) }}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000004",
+      "name": "updateEntry",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        528
+      ],
+      "parameters": {
+        "toolDescription": "Update properties of an existing KB entry by pageId. Pass only the properties you want to change.",
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID to update (from a prior queryKB result)', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ properties: $fromAI('properties', 'Object with the subset of properties to update, same shape as Notion page properties (e.g. { \"GTD Status\": { \"select\": { \"name\": \"Reference\" } } }).', 'json') }) }}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "c0000000-0000-0000-0000-000000000005",
+      "name": "archiveEntry",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        528
+      ],
+      "parameters": {
+        "toolDescription": "Archive (soft-delete) a KB entry by pageId. ONLY call this AFTER the user has explicitly confirmed deletion in the current turn (see confirmation gate in system prompt).",
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $fromAI('pageId', 'Notion page ID to archive (from a prior queryKB result)', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"archived\": true}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
       }
     },
     {
       "id": "a1000000-0000-0000-0000-00000000000f",
-      "name": "Send Capture Confirmation",
+      "name": "Send Reply",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1440, 432],
+      "position": [
+        720,
+        320
+      ],
       "parameters": {
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
-        "text": "={{ $('Parse Classification').item.json.summary }}",
+        "text": "={{ $json.output }}",
         "additionalFields": {
           "appendAttribution": false
         }
       },
-      "webhookId": "a2-alex-send-confirm"
-    },
-    {
-      "id": "a1000000-0000-0000-0000-000000000010",
-      "name": "Send Clarification",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1216, 208],
-      "parameters": {
-        "operation": "sendMessage",
-        "chatId": "={{ $('Extract Context').item.json.chatId }}",
-        "text": "={{ $('Parse Classification').item.json.clarificationText }}",
-        "additionalFields": {
-          "appendAttribution": false
+      "webhookId": "a2-alex-send-reply",
+      "credentials": {
+        "telegramApi": {
+          "id": "XiPoK10AazY77yJ3",
+          "name": "Telegram Alex"
         }
-      },
-      "webhookId": "a2-alex-send-clarif"
+      }
     }
   ],
   "connections": {
     "Telegram Trigger": {
-      "main": [[{ "node": "Extract Context", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Extract Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Context": {
-      "main": [[{ "node": "Route Input Type", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Route Input Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Route Input Type": {
       "main": [
-        [{ "node": "Build Prompt", "type": "main", "index": 0 }],
-        [{ "node": "Get Voice File", "type": "main", "index": 0 }],
-        [{ "node": "Fetch URL", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Get Voice File": {
-      "main": [[{ "node": "Whisper Transcribe", "type": "main", "index": 0 }]]
-    },
-    "Whisper Transcribe": {
-      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
-    },
-    "Fetch URL": {
-      "main": [[{ "node": "Extract Meta", "type": "main", "index": 0 }]]
-    },
-    "Extract Meta": {
-      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
-    },
-    "Build Prompt": {
-      "main": [[{ "node": "Alex Agent", "type": "main", "index": 0 }]]
-    },
-    "Anthropic Chat Model": {
-      "ai_languageModel": [[{ "node": "Alex Agent", "type": "ai_languageModel", "index": 0 }]]
-    },
-    "Conversation Memory": {
-      "ai_memory": [[{ "node": "Alex Agent", "type": "ai_memory", "index": 0 }]]
-    },
-    "Alex Agent": {
-      "main": [[{ "node": "Parse Classification", "type": "main", "index": 0 }]]
-    },
-    "Parse Classification": {
-      "main": [[{ "node": "Is Clarification?", "type": "main", "index": 0 }]]
-    },
-    "Is Clarification?": {
       "main": [
-        [{ "node": "Send Clarification", "type": "main", "index": 0 }],
-        [{ "node": "Notion Create Page", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Whisper Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Notion Create Page": {
-      "main": [[{ "node": "Send Capture Confirmation", "type": "main", "index": 0 }]]
+    "Whisper Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch URL": {
+      "main": [
+        [
+          {
+            "node": "Extract Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Meta": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "queryKB": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getEntry": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "createEntry": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "updateEntry": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "archiveEntry": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alex Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
   "n8nWorkflowId": "3PDLYV2gpwbQCqNp",
-  "_notes": "The Alex Agent's systemMessage in this exported file is a placeholder. The live workflow on n8n holds the full GTD prompt loaded from system-prompt.xml. The canonical version of the prompt is system-prompt.xml in this folder."
+  "_notes": "The Alex Agent's systemMessage in this exported file is a placeholder. The live workflow on n8n holds the full system prompt loaded from system-prompt.xml. The canonical version of the prompt is system-prompt.xml in this folder."
 }
