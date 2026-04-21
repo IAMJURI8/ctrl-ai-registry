@@ -1,5 +1,4 @@
 {
-  "_notes": "The Alex Agent's systemMessage in this exported file is a placeholder. The live workflow on n8n holds the full system prompt loaded from system-prompt.xml. The canonical version of the prompt is system-prompt.xml in this folder.",
   "n8nWorkflowId": "3PDLYV2gpwbQCqNp",
   "name": "A2 — Alex (Personal Knowledge Assistant)",
   "nodes": [
@@ -223,6 +222,42 @@
       }
     },
     {
+      "id": "a2-node-fetch-prompt",
+      "name": "Fetch Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        320
+      ],
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a2-alex-knowledge-assistant/system-prompt.xml",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a2-node-resolve-prompt",
+      "name": "Resolve Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\nconst AGENT_ID = 'a2';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\nconst rawBody = httpItem.data ?? httpItem.body;\nconst body = typeof rawBody === 'string' ? rawBody : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\nlet prompt;\nlet source;\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\nconst upstream = $('Build Prompt').item.json;\nreturn [{ json: { ...upstream, prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
+      }
+    },
+    {
       "id": "a1000000-0000-0000-0000-000000000009",
       "name": "Anthropic Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
@@ -268,14 +303,14 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        464,
+        720,
         320
       ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.userMessage }}",
         "options": {
-          "systemMessage": "PLACEHOLDER — see system-prompt.xml for canonical version."
+          "systemMessage": "={{ $('Resolve Prompt').item.json.prompt }}"
         }
       }
     },
@@ -517,7 +552,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        720,
+        880,
         320
       ],
       "parameters": {
@@ -630,6 +665,28 @@
       ]
     },
     "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Fetch Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prompt": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prompt": {
       "main": [
         [
           {

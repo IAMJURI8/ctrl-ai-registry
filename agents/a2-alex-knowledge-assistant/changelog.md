@@ -1,5 +1,12 @@
 # Alex (A2) — Changelog
 
+## v0.4 — 2026-04-21 — Prompt fetched from Git at runtime
+- System prompt now fetched from Git at runtime instead of pasted into the n8n agent node. New `Fetch Prompt` (HTTP Request) and `Resolve Prompt` (Code) nodes inserted between `Build Prompt` and `Alex Agent`. The agent's `systemMessage` is now the expression `={{ $('Resolve Prompt').item.json.prompt }}`.
+- Cache-and-fallback layer in `Resolve Prompt` using n8n workflow static data (key `prompt_cache_a2`, 5-minute TTL). On HTTP success, prompt is cached and used live. On HTTP failure (non-200, timeout, network error), the last-known-good cached prompt is served and a fallback message is logged. If no cache exists at all, the workflow fails loudly rather than silently passing an empty prompt.
+- HTTP node uses `onError: continueRegularOutput` so the resolve node can serve cache instead of halting the workflow. HTTP body is read from `data ?? body` since `responseFormat: text` + `fullResponse: true` puts the payload in `data`.
+- `Resolve Prompt` passes through `Build Prompt`'s `chatId` and `userMessage` so downstream Alex Agent and Send Reply expressions resolve unchanged. No `{{ }}` placeholders in Alex's prompt to interpolate (unlike Francis), so the resolve step is a pure pass-through plus prompt assembly.
+- Removed obsolete `_notes` field from `workflow.json`. Repo is now self-explanatory: the prompt fetched at runtime is the canonical `system-prompt.xml`.
+
 ## v0.3.1 — 2026-04-20 — Tool schema fixes
 Two fixes to make v0.3 actually work end-to-end with live Notion calls.
 
