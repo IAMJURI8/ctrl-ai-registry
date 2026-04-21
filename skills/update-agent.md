@@ -72,5 +72,9 @@ Never delete the original Recently Completed entry. Rollbacks are additive.
 - **No direct n8n canvas edits.** Changes must flow Git → MCP, never UI → canvas. If a canvas edit happens under pressure (emergency hotfix), re-export the workflow via `n8n_get_workflow` and commit it to `workflow.json` BEFORE the session ends. No session ends with canvas-only state.
 - **No concurrent sessions on the same agent.** If two Claude surfaces are running against the same agent, one must stop until the other finishes the four-step action.
 - **No partial four-step completions.** Either all four or rollback. Leaving Git+Registry updated but n8n stale is a drift incident — treat it as a bug, not a milestone.
-- **No skipping Last Updated.** The pre-commit hook (handoff-in-progress) will enforce this, but the skill layer enforces it today by checklist.
-- **No `--no-verify` on commits** unless Julian explicitly authorizes, and in that case a Recently Completed entry must explain why.
+- **No skipping Last Updated.** Enforced mechanically by `scripts/pre-commit.sh`: any staged `agents/*/system-prompt.xml` or `agents/*/workflow.json` whose matching Registry row has a Last Updated older than today (Europe/Berlin) blocks the commit. Update the Registry row first, then re-stage and commit.
+- **No `--no-verify` on commits** except in one scenario: a genuine emergency where the Registry cannot be updated first (Notion outage, token missing, etc.). In that case:
+  1. Julian must explicitly authorize the bypass in the session.
+  2. Immediately after the bypass commit, fix the Registry (update Last Updated, Notes suffix with `<commit hash>`).
+  3. Append a Recently Completed entry in the Strategy Digest naming the bypassed commit, the reason, and the follow-up Registry fix.
+  No silent `--no-verify`. The whole point of the hook is that bypassing leaves a paper trail.
