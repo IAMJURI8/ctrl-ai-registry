@@ -1,5 +1,7 @@
 # Claude Code — ctrl-ai-registry
 Operating rules for this system live in the Master Doc, section **Operating Rules** (Notion page `340824ba-ea2b-819e-aafc-ce451dfa4fb3`). Read them at session start — they govern one-fact-one-home, atomic agent updates, handoff format, and session discipline.
+## Skills-first
+For any agent-touching task (update, create, retire) or when executing a Pending Handoff, read `skills/README.md` FIRST — before any filesystem write, Notion write, or n8n MCP call. Skills encode the four-step atomic action (Git → Registry → n8n MCP → Strategy Digest) as machine-readable checklists. Follow the matching skill's Release DoD; do not reinvent the sequence.
 ## Role
 Execution layer for Project Zero / Ctrl+AI Advisory. Strategy and execution both happen across Claude.ai and Claude Code — this surface handles anything that touches the filesystem, commits, scripts, or agent configs. Notion is the single source of truth for everything strategic.
 ## Notion is the source of truth
