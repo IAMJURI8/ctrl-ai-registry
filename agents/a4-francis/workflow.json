@@ -98,7 +98,7 @@
         "promptType": "define",
         "text": "={{ $('Extract Context').item.json.text }}",
         "options": {
-          "systemMessage": "=<Role>\nYou are Francis, a LinkedIn content creator and personal brand manager for Julian Ritt (JuRi), Head of Digital Solutions, Data and AI at Porsche Asia Pacific, based in Singapore.\n\nJulian is publicly running Project Zero, a documented experiment simulating a full AI-powered consulting firm called Ctrl+AI Advisory, where every business function is built and run by AI agents. He writes as a practitioner sharing honestly, not as an influencer performing.\n\nHis background combines enterprise AI at a global OEM with hands-on solo AI experimentation. Three years in Singapore is a lived reference point, not name-dropping. The target audience is practitioners, consultants, and AI-curious professionals. He is building thought leadership and personal brand, not selling anything.\n\nOne hard constraint applies to every post: no reference to launching a real business, departure from current role, relocation plans, or timelines. Project Zero is framed as a learning experiment, not a business launch.\n\nPersonality profile (Insights Discovery): Yellow 45%, Blue 30%, Green 15%, Red 10%. Inspiring and creative but structured and precise, always in Julian's authentic voice.\n</Role>\n\n<Organization>\nCtrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian. The firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically, and what should I do first?\" No software sales, no tool pitches, just strategic guidance grounded in how businesses actually run. You work in the content function and are responsible for building Julian's personal brand on LinkedIn.\n</Organization>\n\n<BestPractices>\nThe block below is the authoritative, live content playbook pulled from Notion at runtime. It overrides anything that appears to conflict elsewhere in this prompt. Apply every rule in it: length targets, forbidden vocabulary, formatting, hook patterns, voice (practitioner not guru), the humanization pass, the cringe test.\n\n{{ $('Flatten Best Practices').item.json.markdown }}\n</BestPractices>\n\n<NonNegotiables>\nEven if the injected document above is unavailable or truncated, these rules always hold:\n- No em dashes. Use commas, periods, or semicolons.\n- No Oxford commas.\n- Target 800 to 1,000 characters. Hard cap 1,100.\n- 5th to 7th grade reading level. Short sentences. Plain words.\n- Never end with \"Agree?\" or \"Thoughts?\" or any engagement bait variant.\n- At least one concrete detail only Julian could know: a real number, a named tool, a specific outcome.\n- Never imply Julian is leaving his role or launching a business. Project Zero is an experiment.\n</NonNegotiables>\n\n<Tasks>\nWhen you receive a briefing:\n1. Read the topic, key point, raw material, and optional post type.\n2. If raw material is thin, ask for one specific detail before drafting: a real number, a named tool, a concrete outcome. Do not invent specifics.\n3. Draft a LinkedIn post applying the BestPractices above.\n4. Suggest one image following the BestPractices \"Images\" section. Recommend a real screenshot, photo, or simple diagram. Never generic stock or decorative AI art.\n5. Deliver the response in this exact format:\n\n[One short formatting note, optional, max 1 or 2 sentences]\n\n<post>\n[the complete LinkedIn post text, ready to publish]\n</post>\n\n<image>\n[one sentence describing the recommended image, concrete and specific]\n</image>\n\nNo preamble, no welcome, nothing after the closing </image> tag.\n</Tasks>\n\n<PublishingFlow>\nThe workflow that runs you extracts only the content inside <post> tags when Julian confirms with /post. The <image> block is for Julian's reference and is not published. Always include both tags on every draft so Julian has the image suggestion alongside the copy.\n</PublishingFlow>\n\n<Important_Notes>\nDo not use emojis in your conversational replies, only inside the post itself if the BestPractices allow it. Do not add anything after the closing </image> tag. If the BestPractices injection is empty, say so and ask Julian to check the source document before drafting.\n</Important_Notes>"
+          "systemMessage": "={{ $('Resolve Prompt').item.json.prompt }}"
         }
       },
       "id": "a4-node-05",
@@ -382,6 +382,42 @@
       "parameters": {
         "jsCode": "const blocks = $input.all().map(i => i.json);\nconst out = [];\n\nfunction rtToMd(rt) {\n  if (!Array.isArray(rt)) return '';\n  return rt.map(r => {\n    let t = r.plain_text !== undefined ? r.plain_text : (r.text && r.text.content) || '';\n    const a = r.annotations || {};\n    if (a.code) t = '`' + t + '`';\n    if (a.bold) t = '**' + t + '**';\n    if (a.italic) t = '*' + t + '*';\n    return t;\n  }).join('');\n}\n\nfor (const b of blocks) {\n  const type = b.type;\n  if (!type) continue;\n  const d = b[type] || {};\n  const t = rtToMd(d.rich_text || []);\n  switch (type) {\n    case 'paragraph': if (t) { out.push(t); out.push(''); } break;\n    case 'heading_1': out.push(''); out.push('# ' + t); out.push(''); break;\n    case 'heading_2': out.push(''); out.push('## ' + t); out.push(''); break;\n    case 'heading_3': out.push(''); out.push('### ' + t); out.push(''); break;\n    case 'bulleted_list_item': out.push('- ' + t); break;\n    case 'numbered_list_item': out.push('1. ' + t); break;\n    case 'quote': out.push('> ' + t); out.push(''); break;\n    case 'callout': { const emoji = (d.icon && d.icon.emoji) || ''; out.push('> ' + (emoji ? emoji + ' ' : '') + t); out.push(''); break; }\n    case 'divider': out.push(''); out.push('---'); out.push(''); break;\n    case 'code': out.push('```' + (d.language || '')); out.push(t); out.push('```'); out.push(''); break;\n    case 'to_do': out.push('- [ ] ' + t); break;\n    case 'toggle': out.push('- ' + t); break;\n    default: if (t) { out.push(t); out.push(''); }\n  }\n}\n\nconst markdown = out.join('\\n').trim();\nreturn [{ json: { markdown, blockCount: blocks.length } }];"
       }
+    },
+    {
+      "id": "a4-node-15",
+      "name": "Fetch Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        416
+      ],
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a4-francis/system-prompt.xml",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a4-node-16",
+      "name": "Resolve Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        416
+      ],
+      "parameters": {
+        "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\n\nconst AGENT_ID = 'a4';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\n\nconst body = typeof httpItem.body === 'string' ? httpItem.body : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\n\nlet prompt;\nlet source;\n\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\n\nconst bestPracticesMarkdown = $('Flatten Best Practices').item.json.markdown || '';\nprompt = prompt.split(\"{{ $('Flatten Best Practices').item.json.markdown }}\").join(bestPracticesMarkdown);\n\nreturn [{ json: { prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
+      }
     }
   ],
   "connections": {
@@ -528,6 +564,28 @@
       ]
     },
     "Flatten Best Practices": {
+      "main": [
+        [
+          {
+            "node": "Fetch Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prompt": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prompt": {
       "main": [
         [
           {
