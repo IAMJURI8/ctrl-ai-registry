@@ -13,6 +13,8 @@ Fetch via Notion MCP when current state matters. Do not assume from local copies
 ## Skills-first
 Before any agent-touching task (update, create, retire) or executing a Pending Handoff, read the matching file in `/skills/`. Start at `skills/README.md`. Skills encode the four-step atomic action (Git → Registry → n8n MCP → Strategy Digest) as checklists; follow the matching Release DoD instead of reinventing the sequence.
 
+Read `skills/wrap-up.md` before ending any session that touched an agent or any tracked file.
+
 ## Writing and commit conventions
 - No emojis
 - No filler phrases ("Great!", "Sure!")
