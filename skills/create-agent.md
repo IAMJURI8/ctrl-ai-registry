@@ -65,6 +65,7 @@ If activation fails or the agent misbehaves post-release:
 
 ## Failure modes and prohibitions
 
+- **Telegram `appendAttribution: false` is mandatory.** All Telegram Send Message nodes must have `appendAttribution: false` in `parameters.additionalFields`. Verify via MCP before session end.
 - **No direct n8n canvas creation.** Workflows are born via MCP deploy from `workflow.json`. A canvas-first workflow means the repo is the drift site — forbidden.
 - **No flipping status to `active` before the live trigger test passes.** Status stays `building` until Telegram (or the equivalent interface) completes a full roundtrip.
 - **No concurrent sessions building the same agent.**

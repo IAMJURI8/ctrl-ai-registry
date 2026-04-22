@@ -69,6 +69,7 @@ Never delete the original Recently Completed entry. Rollbacks are additive.
 
 ## Failure modes and prohibitions
 
+- **Telegram `appendAttribution: false` is mandatory.** All Telegram Send Message nodes must have `appendAttribution: false` in `parameters.additionalFields`. Verify via MCP before session end.
 - **No direct n8n canvas edits.** Changes must flow Git → MCP, never UI → canvas. If a canvas edit happens under pressure (emergency hotfix), re-export the workflow via `n8n_get_workflow` and commit it to `workflow.json` BEFORE the session ends. No session ends with canvas-only state.
 - **No concurrent sessions on the same agent.** If two Claude surfaces are running against the same agent, one must stop until the other finishes the four-step action.
 - **No partial four-step completions.** Either all four or rollback. Leaving Git+Registry updated but n8n stale is a drift incident — treat it as a bug, not a milestone.

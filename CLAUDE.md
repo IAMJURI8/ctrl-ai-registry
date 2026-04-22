@@ -1,54 +1,25 @@
 # Claude Code — ctrl-ai-registry
-Operating rules for this system live in the Master Doc, section **Operating Rules** (Notion page `340824ba-ea2b-819e-aafc-ce451dfa4fb3`). Read them at session start — they govern one-fact-one-home, atomic agent updates, handoff format, and session discipline.
+
+## What this is
+Execution layer for Ctrl+AI Advisory agents. Owner: JuRi.
+
+## Source of truth: Notion
+- Master Doc — `340824ba-ea2b-819e-aafc-ce451dfa4fb3`. Operating Rules live here; read them at session start.
+- Strategy Digest — `22d6f96c-1f2c-447e-897a-c064c3484d50`. Pending Handoffs and Recently Completed.
+- Agent Registry DB — `b3f81c65-8bd5-4bf6-8a3e-9805f6c2f9ec`. Canonical roster and agent state.
+
+Fetch via Notion MCP when current state matters. Do not assume from local copies or memory.
+
 ## Skills-first
-For any agent-touching task (update, create, retire) or when executing a Pending Handoff, read `skills/README.md` FIRST — before any filesystem write, Notion write, or n8n MCP call. Skills encode the four-step atomic action (Git → Registry → n8n MCP → Strategy Digest) as machine-readable checklists. Follow the matching skill's Release DoD; do not reinvent the sequence.
-## Role
-Execution layer for Project Zero / Ctrl+AI Advisory. Strategy and execution both happen across Claude.ai and Claude Code — this surface handles anything that touches the filesystem, commits, scripts, or agent configs. Notion is the single source of truth for everything strategic.
-## Notion is the source of truth
-Three canonical resources, read via Notion MCP (`notion-fetch`, `notion-update-page`, `notion-search`):
-- Master Doc (Firm Spec) — `340824ba-ea2b-819e-aafc-ce451dfa4fb3`. Stable. Owned by Julian. Do not edit without explicit instruction.
-- Strategy Digest — `22d6f96c-1f2c-447e-897a-c064c3484d50`. Fluid. Holds current focus, active decisions, pending handoffs, recently completed.
-- Agent Registry DB — find via `notion-search`. Canonical roster of all agents. Update when building, activating, or retiring an agent.
-At the start of any session where current state matters, fetch the Strategy Digest. Do not cache strategy content in this file or anywhere else in the repo.
-## Handoff protocol
-At the start of every session, fetch the Strategy Digest and report what's in "Pending Handoffs." If items exist, list them briefly (title + one-line task) and ask Julian whether to work through them, which ones, or defer. Do not auto-execute. When Julian confirms, execute items in order and for each completed item move it to "Recently Completed" with a brief note on what was done and any commit links. If an entry is unclear, ask before executing.
-## Repo conventions
-- Agent folders: `agents/[id]-[short-name]/` with `system-prompt.xml` and `workflow.json`
-- Status values: `active`, `building`, `planned`, `retired`
-- Commit format: `type: description [date]`, never skip hooks
-- The Notion Agent Registry DB is canonical for agent state. Any `registry.json` file in the repo is deprecated.
-- Every n8n Telegram node must have `appendAttribution: false` in `parameters.additionalFields`. Applies to all agents and any node modifications. Keep live n8n state and `workflow.json` in sync.
-## Writing principles
+Before any agent-touching task (update, create, retire) or executing a Pending Handoff, read the matching file in `/skills/`. Start at `skills/README.md`. Skills encode the four-step atomic action (Git → Registry → n8n MCP → Strategy Digest) as checklists; follow the matching Release DoD instead of reinventing the sequence.
+
+## Writing and commit conventions
 - No emojis
 - No filler phrases ("Great!", "Sure!")
 - Concise, no trailing summaries
 - German terms stay untranslated (Steuerberater, Versicherungsmakler)
 - No Oxford commas
-## Working conventions
+- Commit format: `type: description [date]`
 - Read files before modifying them
 - Never commit without being asked
 - Prefer editing existing files over creating new ones
-- For strategy context, fetch from Notion — never rely on local copies
-## VPS Claude Code
-Running on Hostinger VPS as user `juri` (non-root, in sudo and docker groups).
-
-**Reattach after SSH:** `su - juri && tmux attach -t claude`
-
-**Restart Remote Control after reboot:**
-```
-tmux new-session -d -s claude
-tmux send-keys -t claude 'claude --dangerously-skip-permissions' Enter
-```
-
-**`--dangerously-skip-permissions` rationale:** Julian approves commands via the Android app without seeing the terminal anyway. Skip-permissions removes redundant prompts; Hostinger daily backups (2-day rolling) + manual baseline snapshot are the actual safety net.
-
-**Primary client:** Claude Android app via Remote Control. No laptop required.
-
-## Agent build handoff
-When Julian asks Claude Code to build an agent from a Notion URL:
-1. `notion-fetch` the page to read the spec, appearance fields, and profile picture.
-2. Create `agents/[id]-[short-name]/system-prompt.xml` (from the spec in the page body) and `workflow.json` (cloned from a template or sibling agent).
-3. Update the Notion row: status → `building`, GitHub folder link filled, version notes added.
-4. Report completion.
-
-The Notion row is the handoff payload. No prompt is pasted into Claude Code.
