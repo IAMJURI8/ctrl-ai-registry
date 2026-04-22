@@ -1,5 +1,4 @@
 {
-  "n8nWorkflowId": "3PDLYV2gpwbQCqNp",
   "name": "A2 — Alex (Personal Knowledge Assistant)",
   "nodes": [
     {
@@ -222,42 +221,6 @@
       }
     },
     {
-      "id": "a2-node-fetch-prompt",
-      "name": "Fetch Prompt",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        400,
-        320
-      ],
-      "parameters": {
-        "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a2-alex-knowledge-assistant/system-prompt.xml",
-        "options": {
-          "timeout": 5000,
-          "response": {
-            "response": {
-              "responseFormat": "text",
-              "fullResponse": true
-            }
-          }
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "a2-node-resolve-prompt",
-      "name": "Resolve Prompt",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        560,
-        320
-      ],
-      "parameters": {
-        "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\nconst AGENT_ID = 'a2';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\nconst rawBody = httpItem.data ?? httpItem.body;\nconst body = typeof rawBody === 'string' ? rawBody : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\nlet prompt;\nlet source;\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\nconst upstream = $('Build Prompt').item.json;\nreturn [{ json: { ...upstream, prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
-      }
-    },
-    {
       "id": "a1000000-0000-0000-0000-000000000009",
       "name": "Anthropic Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
@@ -337,7 +300,7 @@
           "values": [
             {
               "name": "payload",
-              "description": "Notion databases/query POST body as a JSON object. Supports filter (Notion filter object with property/select/title/multi_select conditions and and/or composition), sorts (default created_time desc), page_size (default 10, max 25).",
+              "description": "Notion databases/query request body as a JSON object. Fields: filter (Notion filter object), sorts (default created_time desc), page_size (default 10, max 25).",
               "type": "json"
             }
           ]
@@ -426,7 +389,7 @@
           "values": [
             {
               "name": "payload",
-              "description": "Full Notion pages POST body. Must include parent.database_id = \"50f36c97-1e2d-45fc-8483-c8a223523077\" and a properties object matching the Alex KB schema (Name title, Type select, GTD Status select, Source select, Tags multi_select, Notes rich_text).",
+              "description": "Notion pages POST body as a JSON object. Must include parent.database_id and properties matching the Alex KB schema.",
               "type": "json"
             }
           ]
@@ -477,7 +440,7 @@
             },
             {
               "name": "payload",
-              "description": "Notion pages PATCH body: { \"properties\": { ... } } containing only the properties to update. Shapes: title, select, multi_select, rich_text.",
+              "description": "Notion pages PATCH body as a JSON object: { properties: { ... } } with only the keys to update.",
               "type": "json"
             }
           ]
@@ -570,6 +533,90 @@
           "name": "Telegram Alex"
         }
       }
+    },
+    {
+      "id": "a2-node-fetch-prompt",
+      "name": "Fetch Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        320
+      ],
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a2-alex-knowledge-assistant/system-prompt.xml",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a2-node-resolve-prompt",
+      "name": "Resolve Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\nconst AGENT_ID = 'a2';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\nconst rawBody = httpItem.data ?? httpItem.body;\nconst body = typeof rawBody === 'string' ? rawBody : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\nlet prompt;\nlet source;\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\nconst upstream = $('Build Prompt').item.json;\nreturn [{ json: { ...upstream, prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
+      }
+    },
+    {
+      "id": "dd73f209-ee61-4d64-b877-6f7c0c8f2522",
+      "name": "Prepare Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        720
+      ],
+      "parameters": {
+        "jsCode": "const CHARS_PER_TOKEN = 3.5;\nconst output = $json.output || '';\nconst userText = $('Build Prompt').item.json.userMessage || '';\nconst systemPrompt = $('Resolve Prompt').item.json.prompt || '';\nconst inputChars = systemPrompt.length + userText.length;\nconst outputChars = output.length;\nconst inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);\nconst outputTokens = Math.ceil(outputChars / CHARS_PER_TOKEN);\nreturn [{\n  json: {\n    __monitor_body: {\n      agent_name: 'alex',\n      provider: 'anthropic',\n      model: 'claude-sonnet-4-5-20250929',\n      input_tokens: inputTokens,\n      output_tokens: outputTokens,\n      cache_read_tokens: 0,\n      cache_write_tokens: 0,\n      workflow_run_id: $execution.id,\n      metadata: {\n        estimated: true,\n        chat_id: $('Extract Context').item.json.chatId,\n        input_type: $('Extract Context').item.json.inputType,\n        system_prompt_chars: systemPrompt.length,\n        user_text_chars: userText.length,\n        output_chars: outputChars\n      }\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "1360d5a8-2e88-4f1b-8895-207e5ea06bab",
+      "name": "Log to Monitor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        720
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://monitor.controlplusai.com/api/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "REDACTED_ROTATED_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.__monitor_body) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -664,39 +711,6 @@
         ]
       ]
     },
-    "Build Prompt": {
-      "main": [
-        [
-          {
-            "node": "Fetch Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch Prompt": {
-      "main": [
-        [
-          {
-            "node": "Resolve Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resolve Prompt": {
-      "main": [
-        [
-          {
-            "node": "Alex Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Anthropic Chat Model": {
       "ai_languageModel": [
         [
@@ -781,6 +795,55 @@
             "node": "Send Reply",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Prepare Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Fetch Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prompt": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prompt": {
+      "main": [
+        [
+          {
+            "node": "Alex Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Log": {
+      "main": [
+        [
+          {
+            "node": "Log to Monitor",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -791,5 +854,6 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false,
     "binaryMode": "separate"
-  }
+  },
+  "n8nWorkflowId": "3PDLYV2gpwbQCqNp"
 }
