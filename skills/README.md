@@ -10,6 +10,7 @@ Machine-readable checklists. Claude Code reads the relevant skill BEFORE executi
 | Build a new agent from a Notion spec | `create-agent.md` |
 | Retire or deactivate an existing agent | `retire-agent.md` |
 | Execute a Pending Handoff from Strategy Digest | `execute-handoff.md` |
+| Produce an Excalidraw diagram (architecture, flow, concept) | `excalidraw-diagram/SKILL.md` |
 | Close out a session that touched an agent or tracked file | `wrap-up.md` |
 
 If a task touches an agent, the matching skill is required reading before any write. If a handoff references a skill by name, read that skill too.
