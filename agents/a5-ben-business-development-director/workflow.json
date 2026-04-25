@@ -236,6 +236,38 @@
           "name": "Monitor API Key"
         }
       }
+    },
+    {
+      "id": "ben-notion-tool",
+      "name": "Notion API",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [112, 528],
+      "parameters": {
+        "toolDescription": "Call the Notion API. Use this for ALL Notion operations: read pages, write pages, update properties, append blocks, search, query databases. Endpoint examples: 'pages' (POST to create), 'pages/{page_id}' (GET/PATCH), 'blocks/{block_id}/children' (GET/PATCH to append blocks), 'databases/{database_id}/query' (POST), 'search' (POST). Always set body to '{}' for GET requests. For POST/PATCH, pass valid Notion API JSON. Auth and Notion-Version header are added automatically.",
+        "method": "={{ $fromAI('method', 'HTTP method: GET, POST, PATCH, or DELETE', 'string') }}",
+        "url": "=https://api.notion.com/v1/{{ $fromAI('endpoint', 'Notion API endpoint path after /v1/, e.g. pages, pages/PAGE_ID, blocks/BLOCK_ID/children, databases/DB_ID/query, search', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON body as a string. For GET requests pass {}. For POST/PATCH pass a valid Notion API JSON payload.', 'string') }}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
     }
   ],
   "connections": {
@@ -276,6 +308,9 @@
     },
     "Prepare Log": {
       "main": [[{ "node": "Log to Monitor", "type": "main", "index": 0 }]]
+    },
+    "Notion API": {
+      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
     }
   },
   "settings": {
