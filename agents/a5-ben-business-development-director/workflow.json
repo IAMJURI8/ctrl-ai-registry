@@ -1,4 +1,213 @@
 {
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is /new?": {
+      "main": [
+        [
+          {
+            "node": "Send Reset Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Prompt": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ben Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Long Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Long Message": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Log": {
+      "main": [
+        [
+          {
+            "node": "Log to Monitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Read": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Create": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Update": {
+      "ai_tool": [
+        [
+          {
+            "node": "Ben Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Context": {
+      "main": [
+        [
+          {
+            "node": "Route Input Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Input Type": {
+      "main": [
+        [
+          {
+            "node": "Is /new?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Voice File": {
+      "main": [
+        [
+          {
+            "node": "Whisper Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Resolve Voice Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Voice Input": {
+      "main": [
+        [
+          {
+            "node": "Is /new?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": null,
   "name": "A5 — Ben (Business Development Director)",
   "nodes": [
     {
@@ -6,10 +215,15 @@
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [-656, 160],
+      "position": [
+        -656,
+        160
+      ],
       "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-3e2f1a8c9b4e",
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "credentials": {
@@ -24,9 +238,12 @@
       "name": "Extract Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-432, 160],
+      "position": [
+        -432,
+        160
+      ],
       "parameters": {
-        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nconst prev = staticData.sessions[chatId];\nconst prevNum = typeof prev === 'number' && Number.isFinite(prev) ? prev : 0;\n\nif (isNew || prevNum === 0) {\n  staticData.sessions[chatId] = prevNum + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionKey\n  }\n}];"
+        "jsCode": "const msg = $input.first().json;\nconst message = msg.message || msg.channel_post || {};\nconst chatId = String(message.chat?.id || '');\nconst voice = message.voice;\nconst text = (message.text || message.caption || '').trim();\n\nlet inputType = 'text';\nlet voiceFileId = '';\nif (voice && voice.file_id) {\n  inputType = 'voice';\n  voiceFileId = voice.file_id;\n}\n\nconst isNew = inputType === 'text' && text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nconst prev = staticData.sessions[chatId];\nconst prevNum = typeof prev === 'number' && Number.isFinite(prev) ? prev : 0;\n\nif (isNew || prevNum === 0) {\n  staticData.sessions[chatId] = prevNum + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    inputType,\n    text,\n    voiceFileId,\n    isNew,\n    sessionKey\n  }\n}];"
       }
     },
     {
@@ -34,7 +251,10 @@
       "name": "Is /new?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-208, 160],
+      "position": [
+        -208,
+        160
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -63,7 +283,10 @@
       "name": "Send Reset Confirmation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [80, 0],
+      "position": [
+        80,
+        0
+      ],
       "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-aa0001000001",
       "parameters": {
         "chatId": "={{ $('Extract Context').item.json.chatId }}",
@@ -84,7 +307,10 @@
       "name": "Fetch Prompt",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-176, 192],
+      "position": [
+        -176,
+        192
+      ],
       "parameters": {
         "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a5-ben-business-development-director/system-prompt.xml",
         "options": {
@@ -104,7 +330,10 @@
       "name": "Resolve Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [16, 192],
+      "position": [
+        16,
+        192
+      ],
       "parameters": {
         "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\nconst AGENT_ID = 'a5';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\nconst rawBody = httpItem.data ?? httpItem.body;\nconst body = typeof rawBody === 'string' ? rawBody : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\nlet prompt;\nlet source;\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\nreturn [{ json: { prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
       }
@@ -114,7 +343,10 @@
       "name": "Anthropic Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [-64, 512],
+      "position": [
+        -64,
+        512
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -138,7 +370,10 @@
       "name": "Ben Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
-      "position": [16, 304],
+      "position": [
+        16,
+        304
+      ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $('Extract Context').item.json.text }}",
@@ -152,7 +387,10 @@
       "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [240, 528],
+      "position": [
+        240,
+        528
+      ],
       "parameters": {
         "sessionIdType": "customKey",
         "sessionKey": "={{ $('Extract Context').item.json.sessionKey }}",
@@ -164,7 +402,10 @@
       "name": "Split Long Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [368, 304],
+      "position": [
+        368,
+        304
+      ],
       "parameters": {
         "jsCode": "const MAX = 4000;\nconst fullOutput = $('Ben Agent').first().json.output || '';\nconst chatId = $('Extract Context').first().json.chatId;\n\nfunction escapeHtml(s) {\n  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\nfunction splitText(text, max) {\n  if (!text) return [''];\n  if (text.length <= max) return [text];\n  const parts = [];\n  let remaining = text;\n  while (remaining.length > 0) {\n    if (remaining.length <= max) {\n      parts.push(remaining);\n      break;\n    }\n    let sliceEnd = max;\n    const lastDouble = remaining.lastIndexOf('\\n\\n', max);\n    const lastSingle = remaining.lastIndexOf('\\n', max);\n    const lastSpace = remaining.lastIndexOf(' ', max);\n    if (lastDouble > max * 0.5) sliceEnd = lastDouble;\n    else if (lastSingle > max * 0.5) sliceEnd = lastSingle;\n    else if (lastSpace > max * 0.5) sliceEnd = lastSpace;\n    parts.push(remaining.slice(0, sliceEnd).trimEnd());\n    remaining = remaining.slice(sliceEnd).trimStart();\n  }\n  return parts;\n}\n\nreturn splitText(fullOutput, MAX).map(chunk => ({\n  json: { chatId, chunk: escapeHtml(chunk) }\n}));"
       }
@@ -174,7 +415,10 @@
       "name": "Send a text message",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [592, 304],
+      "position": [
+        592,
+        304
+      ],
       "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-aa0001000002",
       "parameters": {
         "chatId": "={{ $json.chatId }}",
@@ -196,7 +440,10 @@
       "name": "Prepare Log",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [64, 720],
+      "position": [
+        64,
+        720
+      ],
       "parameters": {
         "jsCode": "const CHARS_PER_TOKEN = 3.5;\nconst output = $json.output || '';\nconst userText = $('Extract Context').item.json.text || '';\nconst systemPrompt = $('Resolve Prompt').item.json.prompt || '';\nconst inputChars = systemPrompt.length + userText.length;\nconst outputChars = output.length;\nconst inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);\nconst outputTokens = Math.ceil(outputChars / CHARS_PER_TOKEN);\nreturn [{\n  json: {\n    __monitor_body: {\n      agent_name: 'ben',\n      provider: 'anthropic',\n      model: 'claude-opus-4-7',\n      input_tokens: inputTokens,\n      output_tokens: outputTokens,\n      cache_read_tokens: 0,\n      cache_write_tokens: 0,\n      workflow_run_id: $execution.id,\n      metadata: {\n        estimated: true,\n        chat_id: $('Extract Context').item.json.chatId,\n        session_id: $('Extract Context').item.json.sessionKey,\n        system_prompt_chars: systemPrompt.length,\n        user_text_chars: userText.length,\n        output_chars: outputChars\n      }\n    }\n  }\n}];"
       }
@@ -206,7 +453,10 @@
       "name": "Log to Monitor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [288, 720],
+      "position": [
+        288,
+        720
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://monitor.controlplusai.com/api/log",
@@ -242,7 +492,10 @@
       "name": "Notion Read",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [-160, 880],
+      "position": [
+        -160,
+        880
+      ],
       "parameters": {
         "toolDescription": "Read from Notion: fetch a page, retrieve a block, list block children, get database metadata. Use for any read-only Notion operation. Provide endpoint path after /v1/. Examples: pages/PAGE_ID, blocks/BLOCK_ID, blocks/BLOCK_ID/children, databases/DATABASE_ID.",
         "method": "GET",
@@ -253,12 +506,20 @@
         "specifyHeaders": "keypair",
         "parametersHeaders": {
           "values": [
-            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
+            {
+              "name": "Notion-Version",
+              "valueProvider": "fieldValue",
+              "value": "2022-06-28"
+            }
           ]
         },
         "placeholderDefinitions": {
           "values": [
-            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+            {
+              "name": "endpoint",
+              "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.",
+              "type": "string"
+            }
           ]
         }
       },
@@ -274,7 +535,10 @@
       "name": "Notion Create",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [16, 880],
+      "position": [
+        16,
+        880
+      ],
       "parameters": {
         "toolDescription": "Create or query in Notion via POST: create a page, query a database, search Notion. Provide endpoint path after /v1/ and a valid Notion API JSON body. Examples: pages (create page), databases/DATABASE_ID/query, search.",
         "method": "POST",
@@ -285,14 +549,22 @@
         "specifyHeaders": "keypair",
         "parametersHeaders": {
           "values": [
-            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
+            {
+              "name": "Notion-Version",
+              "valueProvider": "fieldValue",
+              "value": "2022-06-28"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "model",
         "placeholderDefinitions": {
           "values": [
-            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+            {
+              "name": "endpoint",
+              "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.",
+              "type": "string"
+            }
           ]
         }
       },
@@ -308,7 +580,10 @@
       "name": "Notion Update",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [192, 880],
+      "position": [
+        192,
+        880
+      ],
       "parameters": {
         "toolDescription": "Update content in Notion via PATCH: update page properties, update a block, append child blocks to a parent. Provide endpoint path after /v1/ and a valid Notion API JSON body. Examples: pages/PAGE_ID (update properties or archive), blocks/BLOCK_ID (update block), blocks/BLOCK_ID/children (append children).",
         "method": "PATCH",
@@ -319,14 +594,22 @@
         "specifyHeaders": "keypair",
         "parametersHeaders": {
           "values": [
-            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
+            {
+              "name": "Notion-Version",
+              "valueProvider": "fieldValue",
+              "value": "2022-06-28"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "model",
         "placeholderDefinitions": {
           "values": [
-            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+            {
+              "name": "endpoint",
+              "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.",
+              "type": "string"
+            }
           ]
         }
       },
@@ -336,62 +619,147 @@
           "name": "Notion account"
         }
       }
+    },
+    {
+      "id": "ben-route-input-type",
+      "name": "Route Input Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -304,
+        160
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-text",
+                    "leftValue": "={{ $json.inputType }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-voice",
+                    "leftValue": "={{ $json.inputType }}",
+                    "rightValue": "voice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ben-get-voice-file",
+      "name": "Get Voice File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        480
+      ],
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Extract Context').item.json.voiceFileId }}"
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "HiAPfTQSkoA2NfyY",
+          "name": "Telegram - Ben"
+        }
+      },
+      "webhookId": "b4a52c25-23e8-4741-8e33-5227719c0453"
+    },
+    {
+      "id": "ben-whisper-transcribe",
+      "name": "Whisper Transcribe",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -112,
+        480
+      ],
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "nRdAoZYQWiPHUZf1",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "ben-resolve-voice-input",
+      "name": "Resolve Voice Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        480
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extract Context').item.json;\nconst incoming = $input.first().json;\nconst transcript = (incoming.text || incoming.transcript || '').trim();\nreturn [{\n  json: {\n    chatId: ctx.chatId,\n    inputType: 'voice',\n    text: transcript,\n    voiceFileId: ctx.voiceFileId,\n    isNew: false,\n    sessionKey: ctx.sessionKey\n  }\n}];"
+      }
     }
   ],
-  "connections": {
-    "Telegram Trigger": {
-      "main": [[{ "node": "Extract Context", "type": "main", "index": 0 }]]
-    },
-    "Extract Context": {
-      "main": [[{ "node": "Is /new?", "type": "main", "index": 0 }]]
-    },
-    "Is /new?": {
-      "main": [
-        [{ "node": "Send Reset Confirmation", "type": "main", "index": 0 }],
-        [{ "node": "Fetch Prompt", "type": "main", "index": 0 }]
-      ]
-    },
-    "Fetch Prompt": {
-      "main": [[{ "node": "Resolve Prompt", "type": "main", "index": 0 }]]
-    },
-    "Resolve Prompt": {
-      "main": [[{ "node": "Ben Agent", "type": "main", "index": 0 }]]
-    },
-    "Anthropic Chat Model": {
-      "ai_languageModel": [[{ "node": "Ben Agent", "type": "ai_languageModel", "index": 0 }]]
-    },
-    "Conversation Memory": {
-      "ai_memory": [[{ "node": "Ben Agent", "type": "ai_memory", "index": 0 }]]
-    },
-    "Ben Agent": {
-      "main": [
-        [
-          { "node": "Split Long Message", "type": "main", "index": 0 },
-          { "node": "Prepare Log", "type": "main", "index": 0 }
-        ]
-      ]
-    },
-    "Split Long Message": {
-      "main": [[{ "node": "Send a text message", "type": "main", "index": 0 }]]
-    },
-    "Prepare Log": {
-      "main": [[{ "node": "Log to Monitor", "type": "main", "index": 0 }]]
-    },
-    "Notion Read": {
-      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "Notion Create": {
-      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "Notion Update": {
-      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
-    }
-  },
+  "pinData": null,
   "settings": {
     "executionOrder": "v1",
     "saveDataErrorExecution": "all",
     "saveDataSuccessExecution": "all",
     "saveManualExecutions": true,
     "saveExecutionProgress": true
-  }
+  },
+  "staticData": {
+    "global": {
+      "sessions": {
+        "8726067721": 6
+      },
+      "promptCache": {
+        "prompt_cache_a5": {
+          "prompt": "<Role>\nAct as an experienced Business Development Director. Your name is Ben.\n\nYour goal is to own the commercial logic for Ctrl+AI Advisory — define which offerings the firm takes to market, set pricing structures that work, and build the arguments that make both defensible.\n\nPersonality profile (Insights Discovery):\n- Red (assertive, goal-oriented): 45%\n- Blue (analytical, precise, conscientious): 35%\n- Yellow (communicative, inspiring, open): 15%\n- Green (supportive, empathetic, team-oriented): 5%\n\nYou act in accordance with this profile: You are highly assertive and direct in your recommendations, willing to challenge decisions and push back when the commercial logic doesn't hold (Red). You are rigorous in your analysis of pricing structures and offering viability, backing arguments with data and clear reasoning (Blue). You articulate value propositions clearly and persuasively, though without softening edges for comfort (Yellow). You minimize accommodation or consensus-seeking — you prioritize what's commercially sound over what feels comfortable (low Green).\n\nCharacter traits and tone: Direct, assertive, and data-driven. You challenge assumptions without softening. You articulate positions clearly and persuasively. Low accommodation — you prioritize commercial soundness over comfort. Pushback is the job; if you soften to keep Julian happy, you're failing the role.\n\nVisual identity: 40-year-old Caucasian male with short hair and beard\n</Role>\n\n<Organization>\nYou work for Ctrl+AI Advisory. Ctrl+AI Advisory is a vendor-neutral AI consulting firm for SMEs, founded and led by Julian (JuRi).\n\nThe firm helps business owners and leaders answer the question: \"What does AI mean for my business, specifically — and what should I do first?\" No software sales, no tool pitches — just strategic guidance grounded in how businesses actually run.\n\nYou are the first revenue-facing hire for the firm. You report to Julian. Your peers are Sarah (HR), Alex (Research), and Francis (Finance). A future peer will be a Marketing Director.\n</Organization>\n\n<Workspace>\nYour dedicated working area in Notion is \"Ben — Workspace\" (page ID: 34d824ba-ea2b-815c-925f-cc90cc6893c2). It has two subpages:\n\n- Deliverables (page ID: 34d824ba-ea2b-8100-a836-c3f21c63bea9) — finished commercial artifacts. Create one child page per deliverable (offering shortlist memo, per-offering one-pagers, pricing memo, etc.). Update existing pages when iterating.\n\n- Session Memory (page ID: 34d824ba-ea2b-8193-b879-c647deeec795) — persistent log across Telegram sessions. At session start, read the most recent entries to restore context. At session end, append a new entry: heading with today's date, then bullets covering what was discussed, what was decided, what's open.\n\nWrite rules:\n- All writes (create_page, append blocks, update properties) MUST target a page inside this workspace subtree (the workspace page itself or any descendant).\n- Reading other Notion pages is allowed when explicitly relevant.\n- If JuRi asks you to write somewhere outside this subtree, refuse and ask him to confirm — surface the constraint, don't silently comply.\n</Workspace>\n\n<Tasks>\nYour v1 scope proceeds in this sequence:\n\n1. Pressure-test the firm's inherited offering list:\n   - Half-day workshops\n   - Paid diagnostics\n   - AI strategy sprints\n   - Ongoing retainers\n   - Implementation support\n\n   Five offerings is too many for v1. Argue Julian down to two or three. Output: a one-page memo with the case for which offerings survive and why.\n\n2. Spec each surviving offering as a real product. Single page per offering covering:\n   - Name\n   - One-sentence promise\n   - Scope\n   - Explicit exclusions\n   - Deliverables\n   - Duration\n   - Price band with reasoning\n   - Payment structure\n\n   The \"real enough\" test: if a prospect signed an LOI tomorrow, every offering page must work without modification.\n\n3. Develop the pricing logic. Not just what prices — why those prices, what the anchor is, what you say when someone pushes back on €8k for a diagnostic. Output: an internal pricing memo Julian can pressure-test against you.\n\nWork method:\n- At session start, read recent entries in Session Memory (see Workspace) to restore context\n- Draft and iterate deliverables as child pages under Deliverables\n- At session end, append a Session Memory entry summarizing what was discussed, decided, and what's open\n- Use web search for benchmarking when needed\n- Push back when commercial logic doesn't hold\n</Tasks>\n\n<Skills_and_Authorities>\n- Telegram interface for communication\n- Notion API access via three tools (Notion Read / Notion Create / Notion Update). Read scope is broad; write scope is limited by policy to the Workspace subtree (see Workspace section).\n- Web search capability for market research and benchmarking\n- No code execution\n</Skills_and_Authorities>\n\n<Important_Notes>\nYour work is critical to the firm's commercial viability.\n\nKey constraints:\n- Ctrl+AI Advisory is vendor-neutral. Never name specific tools (n8n, Claude, Make, ChatGPT) in any offering or pricing artifact.\n- No employer references, no relocation framing, no \"launching a business\" language anywhere.\n- No AI voice cold calls — §7 UWG makes them illegal in Germany.\n- Pushback is the job. If you soften to keep Julian happy, you're failing the role.\n</Important_Notes>\n",
+          "ts": 1777100938353
+        }
+      }
+    }
+  },
+  "tags": []
 }
