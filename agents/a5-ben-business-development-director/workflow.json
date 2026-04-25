@@ -238,29 +238,97 @@
       }
     },
     {
-      "id": "ben-notion-tool",
-      "name": "Notion API",
+      "id": "ben-notion-get",
+      "name": "Notion Read",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [112, 528],
+      "position": [-160, 880],
       "parameters": {
-        "toolDescription": "Call the Notion API. Use this for ALL Notion operations: read pages, write pages, update properties, append blocks, search, query databases. Endpoint examples: 'pages' (POST to create), 'pages/{page_id}' (GET/PATCH), 'blocks/{block_id}/children' (GET/PATCH to append blocks), 'databases/{database_id}/query' (POST), 'search' (POST). Always set body to '{}' for GET requests. For POST/PATCH, pass valid Notion API JSON. Auth and Notion-Version header are added automatically.",
-        "method": "={{ $fromAI('method', 'HTTP method: GET, POST, PATCH, or DELETE', 'string') }}",
-        "url": "=https://api.notion.com/v1/{{ $fromAI('endpoint', 'Notion API endpoint path after /v1/, e.g. pages, pages/PAGE_ID, blocks/BLOCK_ID/children, databases/DB_ID/query, search', 'string') }}",
+        "toolDescription": "Read from Notion: fetch a page, retrieve a block, list block children, get database metadata. Use for any read-only Notion operation. Provide endpoint path after /v1/. Examples: pages/PAGE_ID, blocks/BLOCK_ID, blocks/BLOCK_ID/children, databases/DATABASE_ID.",
+        "method": "GET",
+        "url": "https://api.notion.com/v1/{endpoint}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
-            }
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "ben-notion-post",
+      "name": "Notion Create",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [16, 880],
+      "parameters": {
+        "toolDescription": "Create or query in Notion via POST: create a page, query a database, search Notion. Provide endpoint path after /v1/ and a valid Notion API JSON body. Examples: pages (create page), databases/DATABASE_ID/query, search.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/{endpoint}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $fromAI('body', 'JSON body as a string. For GET requests pass {}. For POST/PATCH pass a valid Notion API JSON payload.', 'string') }}"
+        "specifyBody": "model",
+        "placeholderDefinitions": {
+          "values": [
+            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "brvlRm4prk1LZUyR",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "ben-notion-patch",
+      "name": "Notion Update",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [192, 880],
+      "parameters": {
+        "toolDescription": "Update content in Notion via PATCH: update page properties, update a block, append child blocks to a parent. Provide endpoint path after /v1/ and a valid Notion API JSON body. Examples: pages/PAGE_ID (update properties or archive), blocks/BLOCK_ID (update block), blocks/BLOCK_ID/children (append children).",
+        "method": "PATCH",
+        "url": "https://api.notion.com/v1/{endpoint}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "parametersHeaders": {
+          "values": [
+            { "name": "Notion-Version", "valueProvider": "fieldValue", "value": "2022-06-28" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "model",
+        "placeholderDefinitions": {
+          "values": [
+            { "name": "endpoint", "description": "Notion API path after /v1/. Use unhyphenated UUIDs from prior responses or known IDs.", "type": "string" }
+          ]
+        }
       },
       "credentials": {
         "notionApi": {
@@ -309,7 +377,13 @@
     "Prepare Log": {
       "main": [[{ "node": "Log to Monitor", "type": "main", "index": 0 }]]
     },
-    "Notion API": {
+    "Notion Read": {
+      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Notion Create": {
+      "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Notion Update": {
       "ai_tool": [[{ "node": "Ben Agent", "type": "ai_tool", "index": 0 }]]
     }
   },
