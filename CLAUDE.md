@@ -19,7 +19,7 @@ Read `skills/wrap-up.md` before ending any session that touched an agent or any 
 - No emojis
 - No filler phrases ("Great!", "Sure!")
 - Concise, no trailing summaries
-- German terms stay untranslated (Steuerberater, Versicherungsmakler)
+- German terms stay untranslated (Mittelstand, GmbH)
 - No Oxford commas
 - Commit format: `type: description [date]`
 - Read files before modifying them
