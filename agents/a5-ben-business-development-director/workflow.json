@@ -1,0 +1,288 @@
+{
+  "name": "A5 — Ben (Business Development Director)",
+  "nodes": [
+    {
+      "id": "ben-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [-656, 160],
+      "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-3e2f1a8c9b4e",
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "HiAPfTQSkoA2NfyY",
+          "name": "Telegram - Ben"
+        }
+      }
+    },
+    {
+      "id": "ben-extract",
+      "name": "Extract Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-432, 160],
+      "parameters": {
+        "jsCode": "const msg = $input.first().json;\nconst chatId = String(\n  msg.message?.chat?.id ||\n  msg.channel_post?.chat?.id ||\n  ''\n);\nconst text = (\n  msg.message?.text ||\n  msg.channel_post?.text ||\n  ''\n).trim();\nconst isNew = text.toLowerCase() === '/new';\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.sessions) staticData.sessions = {};\n\nconst prev = staticData.sessions[chatId];\nconst prevNum = typeof prev === 'number' && Number.isFinite(prev) ? prev : 0;\n\nif (isNew || prevNum === 0) {\n  staticData.sessions[chatId] = prevNum + 1;\n}\n\nconst sessionNum = staticData.sessions[chatId];\nconst sessionKey = `chat_${chatId}_s${sessionNum}`;\n\nreturn [{\n  json: {\n    chatId,\n    text,\n    isNew,\n    sessionKey\n  }\n}];"
+      }
+    },
+    {
+      "id": "ben-isnew",
+      "name": "Is /new?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-208, 160],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-isnew",
+              "leftValue": "={{ $json.isNew }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ben-reset",
+      "name": "Send Reset Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [80, 0],
+      "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-aa0001000001",
+      "parameters": {
+        "chatId": "={{ $('Extract Context').item.json.chatId }}",
+        "text": "Session cleared. What's the commercial question on the table?",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "HiAPfTQSkoA2NfyY",
+          "name": "Telegram - Ben"
+        }
+      }
+    },
+    {
+      "id": "ben-fetch-prompt",
+      "name": "Fetch Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-176, 192],
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/IAMJURI8/ctrl-ai-registry/main/agents/a5-ben-business-development-director/system-prompt.xml",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ben-resolve-prompt",
+      "name": "Resolve Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [16, 192],
+      "parameters": {
+        "jsCode": "const httpItem = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promptCache) staticData.promptCache = {};\nconst AGENT_ID = 'a5';\nconst CACHE_KEY = `prompt_cache_${AGENT_ID}`;\nconst TTL_MS = 5 * 60 * 1000;\nconst now = Date.now();\nconst rawBody = httpItem.data ?? httpItem.body;\nconst body = typeof rawBody === 'string' ? rawBody : '';\nconst httpOk = httpItem.statusCode === 200 && body.trim().length > 100;\nlet prompt;\nlet source;\nif (httpOk) {\n  prompt = body;\n  staticData.promptCache[CACHE_KEY] = { prompt, ts: now };\n  source = 'live';\n} else {\n  const cached = staticData.promptCache[CACHE_KEY];\n  if (!cached || !cached.prompt) {\n    throw new Error(`[${AGENT_ID}] Prompt fetch failed (status ${httpItem.statusCode}) and no cache available`);\n  }\n  prompt = cached.prompt;\n  const ageMin = Math.round((now - cached.ts) / 60000);\n  source = (now - cached.ts) > TTL_MS ? 'cache-stale' : 'cache';\n  console.log(`[${AGENT_ID}] FALLBACK: HTTP ${httpItem.statusCode}, serving cached prompt (age ${ageMin}m, source=${source})`);\n}\nreturn [{ json: { prompt, source, agent: AGENT_ID, promptLen: prompt.length } }];"
+      }
+    },
+    {
+      "id": "ben-anthropic",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [-64, 512],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-opus-4-7",
+          "cachedResultName": "Claude Opus 4.7"
+        },
+        "options": {
+          "maxTokensToSample": 8192
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "B0tI7wq5X9zzTWKu",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "ben-agent",
+      "name": "Ben Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [16, 304],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Context').item.json.text }}",
+        "options": {
+          "systemMessage": "={{ $('Resolve Prompt').item.json.prompt }}"
+        }
+      }
+    },
+    {
+      "id": "ben-memory",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [240, 528],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Context').item.json.sessionKey }}",
+        "contextWindowLength": 100
+      }
+    },
+    {
+      "id": "ben-split",
+      "name": "Split Long Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [368, 304],
+      "parameters": {
+        "jsCode": "const MAX = 4000;\nconst fullOutput = $('Ben Agent').first().json.output || '';\nconst chatId = $('Extract Context').first().json.chatId;\n\nfunction escapeHtml(s) {\n  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\nfunction splitText(text, max) {\n  if (!text) return [''];\n  if (text.length <= max) return [text];\n  const parts = [];\n  let remaining = text;\n  while (remaining.length > 0) {\n    if (remaining.length <= max) {\n      parts.push(remaining);\n      break;\n    }\n    let sliceEnd = max;\n    const lastDouble = remaining.lastIndexOf('\\n\\n', max);\n    const lastSingle = remaining.lastIndexOf('\\n', max);\n    const lastSpace = remaining.lastIndexOf(' ', max);\n    if (lastDouble > max * 0.5) sliceEnd = lastDouble;\n    else if (lastSingle > max * 0.5) sliceEnd = lastSingle;\n    else if (lastSpace > max * 0.5) sliceEnd = lastSpace;\n    parts.push(remaining.slice(0, sliceEnd).trimEnd());\n    remaining = remaining.slice(sliceEnd).trimStart();\n  }\n  return parts;\n}\n\nreturn splitText(fullOutput, MAX).map(chunk => ({\n  json: { chatId, chunk: escapeHtml(chunk) }\n}));"
+      }
+    },
+    {
+      "id": "ben-send",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [592, 304],
+      "webhookId": "b7f8a3d2-9c1e-4f8b-a5d6-aa0001000002",
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.chunk }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "HiAPfTQSkoA2NfyY",
+          "name": "Telegram - Ben"
+        }
+      }
+    },
+    {
+      "id": "ben-prepare-log",
+      "name": "Prepare Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [64, 720],
+      "parameters": {
+        "jsCode": "const CHARS_PER_TOKEN = 3.5;\nconst output = $json.output || '';\nconst userText = $('Extract Context').item.json.text || '';\nconst systemPrompt = $('Resolve Prompt').item.json.prompt || '';\nconst inputChars = systemPrompt.length + userText.length;\nconst outputChars = output.length;\nconst inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);\nconst outputTokens = Math.ceil(outputChars / CHARS_PER_TOKEN);\nreturn [{\n  json: {\n    __monitor_body: {\n      agent_name: 'ben',\n      provider: 'anthropic',\n      model: 'claude-opus-4-7',\n      input_tokens: inputTokens,\n      output_tokens: outputTokens,\n      cache_read_tokens: 0,\n      cache_write_tokens: 0,\n      workflow_run_id: $execution.id,\n      metadata: {\n        estimated: true,\n        chat_id: $('Extract Context').item.json.chatId,\n        session_id: $('Extract Context').item.json.sessionKey,\n        system_prompt_chars: systemPrompt.length,\n        user_text_chars: userText.length,\n        output_chars: outputChars\n      }\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "ben-log-monitor",
+      "name": "Log to Monitor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [288, 720],
+      "parameters": {
+        "method": "POST",
+        "url": "https://monitor.controlplusai.com/api/log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.__monitor_body) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9f2XZOlBRrYzT3Np",
+          "name": "Monitor API Key"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Extract Context", "type": "main", "index": 0 }]]
+    },
+    "Extract Context": {
+      "main": [[{ "node": "Is /new?", "type": "main", "index": 0 }]]
+    },
+    "Is /new?": {
+      "main": [
+        [{ "node": "Send Reset Confirmation", "type": "main", "index": 0 }],
+        [{ "node": "Fetch Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Prompt": {
+      "main": [[{ "node": "Resolve Prompt", "type": "main", "index": 0 }]]
+    },
+    "Resolve Prompt": {
+      "main": [[{ "node": "Ben Agent", "type": "main", "index": 0 }]]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [[{ "node": "Ben Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Conversation Memory": {
+      "ai_memory": [[{ "node": "Ben Agent", "type": "ai_memory", "index": 0 }]]
+    },
+    "Ben Agent": {
+      "main": [
+        [
+          { "node": "Split Long Message", "type": "main", "index": 0 },
+          { "node": "Prepare Log", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Split Long Message": {
+      "main": [[{ "node": "Send a text message", "type": "main", "index": 0 }]]
+    },
+    "Prepare Log": {
+      "main": [[{ "node": "Log to Monitor", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  }
+}
