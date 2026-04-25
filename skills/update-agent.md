@@ -53,7 +53,9 @@ Copy into the handoff's DoD block if this skill is the executor:
 - [ ] Registry row: Last Updated = today (Europe/Berlin)
 - [ ] Live n8n workflow updated via MCP
 - [ ] n8n workflow diff-verified against repo `workflow.json`
-- [ ] Live trigger test passed (e.g., Telegram roundtrip produces expected output)
+- [ ] **Tool wiring verified.** Every tool named in the system prompt's `<Skills_and_Authorities>` section is wired on the AI Agent node — verified by re-fetching the live workflow via `n8n_get_workflow` and listing the agent node's `tools` array. No prompt-only tool references.
+- [ ] **Autonomous proof-of-life.** Run a representative synthetic input via n8n MCP (`n8n_test_workflow` / `executeWorkflow` / equivalent) — captured response is coherent, Cost Monitor logs the run, no errors. Julian's Telegram test stays his to run; do not consume his chat for verification.
+- [ ] **Cost Monitor allowlist.** `GET https://monitor.controlplusai.com/api/agents` returns the agent. If missing, restart the monitor container (`docker compose -f /home/juri/ai-cost-monitor/docker-compose.yml restart`) so it re-pulls the Registry, then re-check.
 - [ ] Strategy Digest Recently Completed entry appended with commit hash
 
 ## Rollback procedure

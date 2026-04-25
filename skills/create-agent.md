@@ -36,7 +36,7 @@ Out of scope: changing an existing agent (use `update-agent.md`), retirement (us
 ### Release (the four-step atomic action)
 
 1. **Git.** Merge feature branch to `main`. The commit must include both `system-prompt.xml` and `workflow.json`. Push. Record the commit hash.
-2. **Registry.** Flip status → `active`. Fill GitHub folder link, Model, Interface, Orchestration, Phase, Personality. Set Created = original build start date, Last Updated = today (Europe/Berlin). Populate Notes with a one-line descriptor.
+2. **Registry.** Flip status → `active`. Fill GitHub folder link, Model, Interface, Orchestration, Phase, Personality. Set Created = original build start date, Last Updated = today (Europe/Berlin). Populate Notes with a one-line descriptor. Set the row's icon to the profile picture URL Sarah generated, AND populate the `Profile Pic URL` property with the same URL — dual write so the URL is both visually rendered and machine-extractable.
 3. **n8n via MCP.** Deploy via `n8n_create_workflow` if the workflow does not exist yet, or `n8n_update_full_workflow` if a placeholder was created earlier. Capture the live workflow ID and add it to the Registry row (field: Notes or a dedicated workflow-ID field if present).
 4. **Strategy Digest Recently Completed.** One-liner: agent activated, commit hash, live workflow ID.
 
@@ -47,11 +47,15 @@ Out of scope: changing an existing agent (use `update-agent.md`), retirement (us
 - [ ] Commit pushed, hash recorded: `<hash>`
 - [ ] n8n workflow deployed, ID recorded: `<workflow_id>`
 - [ ] Telegram bot bound and credentials attached (if applicable)
-- [ ] End-to-end live trigger test passed (human message → agent output)
+- [ ] **Tool wiring verified.** Every tool named in the system prompt's `<Skills_and_Authorities>` section is wired on the AI Agent node — verified by re-fetching the live workflow via `n8n_get_workflow` and listing the agent node's `tools` array. No prompt-only tool references.
+- [ ] **Autonomous proof-of-life.** Run a representative synthetic input via n8n MCP (`n8n_test_workflow` / `executeWorkflow` / equivalent) — captured response is coherent, Cost Monitor logs the run, no errors. Julian's Telegram test stays his to run; do not consume his chat for verification.
+- [ ] **Cost Monitor allowlist.** `GET https://monitor.controlplusai.com/api/agents` returns the new agent's name. If missing, restart the monitor container (`docker compose -f /home/juri/ai-cost-monitor/docker-compose.yml restart`) so it re-pulls the Registry, then re-check.
 - [ ] Registry row: status = `active`
 - [ ] Registry row: GitHub folder link filled
 - [ ] Registry row: Model, Interface, Orchestration, Phase, Personality populated
 - [ ] Registry row: Last Updated = today (Europe/Berlin)
+- [ ] Registry row icon set to profile picture URL
+- [ ] Registry row `Profile Pic URL` property populated with the same URL (dual write)
 - [ ] Strategy Digest Recently Completed entry appended with commit hash and workflow ID
 
 ## Rollback procedure

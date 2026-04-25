@@ -13,6 +13,19 @@ Trigger phrases: "wrap up", "close out the session", "end of session", "we're do
 3. **Registry Last Updated.** For each touched agent, verify the Agent Registry row's Last Updated = today (Europe/Berlin). If not, update it now.
 4. **Commit.** Commit all changed files to Git. Follow commit convention: `type: description [YYYY-MM-DD]`. Never commit without being asked — EXCEPTION: wrap-up commits are pre-authorised, no confirmation needed.
 5. **Recently Completed entry.** Write the entry in the Strategy Digest. Format: one-line summary of what was done + commit hash(es) if applicable. Be specific enough that a future session can understand what changed without reading the diff.
+6. **Final message to Julian.** Surface the artifacts he needs to verify visually. Use the literal checklist below, one bullet per item. Per agent if multiple agents were touched.
+
+## Final-message-to-Julian checklist (mandatory, no deviation)
+
+The last message of any session that built or updated an agent must include, per agent:
+
+- [ ] **Commit hash(es)** — every commit pushed in the session, short SHA
+- [ ] **n8n workflow ID** — the live workflow id (e.g. `3PDLYV2gpwbQCqNp`)
+- [ ] **Cost Monitor URL** — `https://monitor.controlplusai.com/` so Julian can eyeball the run row
+- [ ] **Profile picture URL** — the URL written to both the Registry row icon and `Profile Pic URL` property
+- [ ] **One-line summary** — what changed, in plain prose
+
+Do not prose-wrap these into a paragraph. Bullets so Julian can scan and click.
 
 ## Definition of Done (self-check before closing)
 
@@ -20,6 +33,7 @@ Trigger phrases: "wrap up", "close out the session", "end of session", "we're do
 - [ ] No agent touched this session has a Registry Last Updated older than today
 - [ ] Recently Completed entry written — even if the only change was a Notion edit
 - [ ] No open n8n workflow edits that were not re-exported
+- [ ] Final message to Julian includes the five-item checklist (per agent)
 
 ## Failure modes and prohibitions
 
